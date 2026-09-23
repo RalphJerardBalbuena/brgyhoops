@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>BrgyHoops - Tournament Dashboard</title>
+    <title>BrgyHoops - Public Tournament Dashboard</title>
 
     <style>
         * {
@@ -16,145 +16,374 @@
         body {
             font-family: Arial, sans-serif;
             background: #f4f6f8;
-            color: #222;
+            color: #1f2937;
+            min-height: 100vh;
         }
 
+        /* Navigation */
         nav {
             background: #111827;
             color: white;
-            padding: 20px 50px;
+            padding: 18px 50px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        nav h1 {
+        .brand {
             font-size: 24px;
+            font-weight: bold;
         }
 
-        nav a {
+        .brand span {
+            color: #dc2626;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .nav-links a {
             color: white;
             text-decoration: none;
-            margin-left: 25px;
+            font-size: 15px;
         }
 
-        nav a:hover {
-            text-decoration: underline;
+        .nav-links a:hover {
+            color: #ef4444;
         }
 
+        .login-button {
+            border: 1px solid #dc2626;
+            padding: 9px 16px;
+            border-radius: 6px;
+        }
+
+        .login-button:hover {
+            background: #dc2626;
+            color: white !important;
+        }
+
+        /* Main Container */
         .container {
             max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
+            margin: 0 auto;
+            padding: 40px 20px;
         }
 
-        .welcome {
+        /* Hero */
+        .hero {
+            background: white;
+            border-radius: 12px;
+            padding: 45px 30px;
             text-align: center;
-            margin-bottom: 40px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 35px;
         }
 
-        .welcome h2 {
-            font-size: 36px;
-            margin-bottom: 10px;
+        .hero h1 {
+            font-size: 38px;
+            color: #111827;
+            margin-bottom: 12px;
         }
 
-        .welcome p {
-            color: #666;
-            font-size: 18px;
+        .hero p {
+            color: #6b7280;
+            font-size: 17px;
+            line-height: 1.6;
         }
 
+        /* Section */
         .section {
-            margin-bottom: 40px;
+            margin-bottom: 35px;
         }
 
-        .section h3 {
-            font-size: 26px;
-            margin-bottom: 20px;
+        .section-header {
+            margin-bottom: 18px;
         }
 
-        .dashboard-grid {
+        .section-header h2 {
+            font-size: 24px;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+
+        .section-header p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* Tournament Information */
+        .info-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
         }
 
-        .card {
+        .info-card {
             background: white;
             padding: 25px;
             border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
-        .card h3 {
+        .info-card h3 {
+            color: #111827;
+            font-size: 17px;
             margin-bottom: 10px;
         }
 
-        .card p {
-            color: #666;
+        .info-card p {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Search and Filter */
+        .search-panel {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: 1fr 180px auto;
+            gap: 12px;
+        }
+
+        .search-form input,
+        .search-form select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-form input:focus,
+        .search-form select:focus {
+            border-color: #dc2626;
+        }
+
+        .search-button {
+            border: none;
+            background: #dc2626;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .search-button:hover {
+            background: #b91c1c;
+        }
+
+        /* Teams */
+        .teams-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .team-card {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .team-card h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #111827;
+        }
+
+        .team-status {
+            display: inline-block;
+            background: #ecfdf5;
+            color: #047857;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .team-card p {
+            color: #6b7280;
+            font-size: 14px;
             line-height: 1.5;
         }
 
-        .game {
+        /* Games */
+        .game-card {
             background: white;
-            padding: 20px;
+            padding: 22px;
             border-radius: 10px;
+            border: 1px solid #e5e7eb;
             margin-bottom: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
-        .game strong {
-            display: block;
-            font-size: 18px;
-            margin-bottom: 10px;
+        .game-card h3 {
+            color: #111827;
+            font-size: 17px;
+            margin-bottom: 12px;
         }
 
-        .game p {
-            color: #666;
-            margin-bottom: 5px;
+        .game-details {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.8;
         }
 
-        .announcement {
+        .game-status {
+            display: inline-block;
+            margin-top: 10px;
+            background: #f3f4f6;
+            color: #374151;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Announcements */
+        .announcement-card {
             background: white;
-            padding: 20px;
+            padding: 22px;
             border-radius: 10px;
+            border: 1px solid #e5e7eb;
             margin-bottom: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
-        .announcement h4 {
+        .announcement-card h3 {
+            color: #111827;
+            font-size: 17px;
             margin-bottom: 8px;
         }
 
-        .announcement p {
-            color: #666;
-            line-height: 1.5;
+        .announcement-date {
+            color: #dc2626;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
 
+        .announcement-card p {
+            color: #6b7280;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        /* Empty / Placeholder */
+        .placeholder {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 35px 20px;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .placeholder h3 {
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .placeholder p {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        footer {
+            background: #111827;
+            color: #9ca3af;
+            text-align: center;
+            padding: 22px;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        footer strong {
+            color: white;
+        }
+
+        /* Tablet */
         @media (max-width: 900px) {
-            .dashboard-grid {
+            nav {
+                padding: 18px 25px;
+            }
+
+            .info-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+
+            .teams-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .search-form {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .search-button {
+                grid-column: span 2;
+            }
         }
 
+        /* Mobile */
         @media (max-width: 600px) {
             nav {
-                padding: 20px;
+                padding: 18px 20px;
                 flex-direction: column;
                 gap: 15px;
+                text-align: center;
             }
 
-            nav a {
-                margin-left: 10px;
-                margin-right: 10px;
+            .nav-links {
+                gap: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
             }
 
-            .dashboard-grid {
+            .container {
+                padding: 30px 15px;
+            }
+
+            .hero {
+                padding: 35px 20px;
+            }
+
+            .hero h1 {
+                font-size: 28px;
+            }
+
+            .info-grid,
+            .teams-grid {
                 grid-template-columns: 1fr;
             }
 
-            .welcome h2 {
-                font-size: 28px;
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+
+            .search-button {
+                grid-column: auto;
             }
         }
     </style>
@@ -162,118 +391,290 @@
 
 <body>
 
+    <!-- Navigation -->
     <nav>
-        <h1>🏀 BrgyHoops</h1>
 
-        <div>
+        <div class="brand">
+            Brgy<span>Hoops</span>
+        </div>
+
+        <div class="nav-links">
             <a href="/">Home</a>
-            <a href="/login">Login</a>
+            <a href="/login" class="login-button">Login</a>
             <a href="/register">Register</a>
         </div>
+
     </nav>
 
-    <div class="container">
 
-        <div class="welcome">
-            <h2>BrgyHoops Tournament</h2>
+    <!-- Main Content -->
+    <main class="container">
+
+        <!-- Hero -->
+        <section class="hero">
+
+            <h1>BrgyHoops Tournament</h1>
+
             <p>
                 Inter-Barangay Basketball Tournament Information
             </p>
-        </div>
 
-        <div class="section">
+            <p>
+                View tournament updates, participating teams,
+                upcoming games, and announcements.
+            </p>
 
-            <h3>Tournament Information</h3>
+        </section>
 
-            <div class="dashboard-grid">
 
-                <div class="card">
-                    <h3>🏀 Teams</h3>
-                    <p>
-                        View participating barangays and basketball teams.
-                    </p>
-                </div>
+        <!-- Tournament Information -->
+        <section class="section">
 
-                <div class="card">
-                    <h3>👥 Players</h3>
-                    <p>
-                        View registered players participating in the tournament.
-                    </p>
-                </div>
+            <div class="section-header">
 
-                <div class="card">
-                    <h3>📅 Schedule</h3>
-                    <p>
-                        View upcoming games, dates, times, and venues.
-                    </p>
-                </div>
-
-                <div class="card">
-                    <h3>🏆 Standings</h3>
-                    <p>
-                        View team standings and win-loss records.
-                    </p>
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="section">
-
-            <h3>Upcoming Games</h3>
-
-            <div class="game">
-
-                <strong>
-                    Barangay A vs Barangay B
-                </strong>
-
-                <p>Date: To be announced</p>
-                <p>Time: To be announced</p>
-                <p>Venue: To be announced</p>
-
-            </div>
-
-            <div class="game">
-
-                <strong>
-                    Barangay C vs Barangay D
-                </strong>
-
-                <p>Date: To be announced</p>
-                <p>Time: To be announced</p>
-                <p>Venue: To be announced</p>
-
-            </div>
-
-        </div>
-
-        <div class="section">
-
-            <h3>Game Results</h3>
-
-            <div class="game">
-
-                <strong>
-                    Recent Game Result
-                </strong>
+                <h2>Tournament Information</h2>
 
                 <p>
-                    Game results will appear here after completed games.
+                    Public tournament information available to everyone.
                 </p>
 
             </div>
 
-        </div>
 
-        <div class="section">
+            <div class="info-grid">
 
-            <h3>Announcements</h3>
+                <div class="info-card">
 
-            <div class="announcement">
+                    <h3>Tournament</h3>
 
-                <h4>Tournament Announcement</h4>
+                    <p>
+                        BrgyHoops Inter-Barangay Basketball Tournament
+                    </p>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <h3>Participating Teams</h3>
+
+                    <p>
+                        View approved teams participating in the tournament.
+                    </p>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <h3>Game Schedule</h3>
+
+                    <p>
+                        View upcoming games, dates, times, and venues.
+                    </p>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <h3>Standings</h3>
+
+                    <p>
+                        Tournament standings and team records will be displayed here.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Search and Filter -->
+        <section class="section">
+
+            <div class="section-header">
+
+                <h2>Find Tournament Information</h2>
+
+                <p>
+                    Search or filter publicly available tournament information.
+                </p>
+
+            </div>
+
+
+            <div class="search-panel">
+
+                <form class="search-form" action="#" method="GET">
+
+                    <input
+                        type="text"
+                        name="search"
+                        placeholder="Search teams, games, or announcements"
+                    >
+
+                    <select name="category">
+
+                        <option value="">All Categories</option>
+                        <option value="teams">Teams</option>
+                        <option value="games">Games</option>
+                        <option value="announcements">Announcements</option>
+
+                    </select>
+
+                    <button type="submit" class="search-button">
+                        Search
+                    </button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+
+        <!-- Participating Teams -->
+        <section class="section">
+
+            <div class="section-header">
+
+                <h2>Participating Teams</h2>
+
+                <p>
+                    Approved teams participating in the tournament.
+                </p>
+
+            </div>
+
+
+            <div class="teams-grid">
+
+                <div class="team-card">
+
+                    <span class="team-status">
+                        Approved
+                    </span>
+
+                    <h3>Barangay A</h3>
+
+                    <p>
+                        Participating basketball team.
+                    </p>
+
+                </div>
+
+
+                <div class="team-card">
+
+                    <span class="team-status">
+                        Approved
+                    </span>
+
+                    <h3>Barangay B</h3>
+
+                    <p>
+                        Participating basketball team.
+                    </p>
+
+                </div>
+
+
+                <div class="team-card">
+
+                    <span class="team-status">
+                        Approved
+                    </span>
+
+                    <h3>Barangay C</h3>
+
+                    <p>
+                        Participating basketball team.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Upcoming Games -->
+        <section class="section">
+
+            <div class="section-header">
+
+                <h2>Upcoming Games</h2>
+
+                <p>
+                    View publicly available upcoming tournament games.
+                </p>
+
+            </div>
+
+
+            <div class="game-card">
+
+                <h3>Barangay A vs Barangay B</h3>
+
+                <div class="game-details">
+
+                    <p>Date: To be announced</p>
+                    <p>Time: To be announced</p>
+                    <p>Venue: To be announced</p>
+
+                </div>
+
+                <span class="game-status">
+                    Scheduled
+                </span>
+
+            </div>
+
+
+            <div class="game-card">
+
+                <h3>Barangay B vs Barangay C</h3>
+
+                <div class="game-details">
+
+                    <p>Date: To be announced</p>
+                    <p>Time: To be announced</p>
+                    <p>Venue: To be announced</p>
+
+                </div>
+
+                <span class="game-status">
+                    Scheduled
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- Announcements -->
+        <section class="section">
+
+            <div class="section-header">
+
+                <h2>Announcements</h2>
+
+                <p>
+                    Important tournament updates and public announcements.
+                </p>
+
+            </div>
+
+
+            <div class="announcement-card">
+
+                <h3>Tournament Announcement</h3>
+
+                <div class="announcement-date">
+                    Tournament Update
+                </div>
 
                 <p>
                     Tournament announcements and important updates
@@ -282,9 +683,23 @@
 
             </div>
 
-        </div>
+        </section>
 
-    </div>
+    </main>
+
+
+    <!-- Footer -->
+    <footer>
+
+        <p>
+            <strong>BrgyHoops</strong> — Inter-Barangay Basketball Tournament Management System
+        </p>
+
+        <p>
+            Public Tournament Dashboard
+        </p>
+
+    </footer>
 
 </body>
 </html>
