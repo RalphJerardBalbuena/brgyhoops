@@ -14,15 +14,20 @@ class AuthController extends Controller
             'name' => 'required',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:6|confirmed',
+            'role' => 'required|in:team_manager,player',
         ]);
 
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => $request->password,
+            'role' => $request->role,
         ]);
 
-        return redirect('/login');
+        return redirect('/login')->with(
+            'success',
+            'Account created successfully! You can now log in.'
+        );
     }
 
     public function login(Request $request)
