@@ -16,89 +16,262 @@
         body {
             font-family: Arial, sans-serif;
             background: #f4f6f8;
-            color: #222;
+            color: #1f2937;
+            min-height: 100vh;
         }
 
         /* Navigation */
         nav {
             background: #111827;
             color: white;
-            padding: 20px 50px;
+            padding: 18px 50px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        nav h1 {
+        .brand {
             font-size: 24px;
+            font-weight: bold;
         }
 
-        nav a {
+        .brand span {
+            color: #dc2626;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .nav-links a {
             color: white;
             text-decoration: none;
+            font-size: 15px;
         }
 
-        nav a:hover {
-            text-decoration: underline;
+        .nav-links a:hover {
+            color: #ef4444;
         }
 
-        /* Main Content */
+        .home-button {
+            border: 1px solid #dc2626;
+            padding: 9px 16px;
+            border-radius: 6px;
+            transition: 0.2s ease;
+        }
+
+        .home-button:hover {
+            background: #dc2626;
+            color: white !important;
+        }
+
+        /* Main Container */
         .container {
             max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
+            margin: 0 auto;
+            padding: 40px 20px;
         }
 
+        /* Welcome Section */
         .welcome {
-            margin-bottom: 30px;
+            margin-bottom: 35px;
         }
 
-        .welcome h2 {
+        .welcome h1 {
             font-size: 32px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            color: #111827;
         }
 
         .welcome p {
-            color: #666;
+            color: #6b7280;
+            font-size: 16px;
         }
 
-        /* Dashboard Cards */
-        .dashboard-grid {
+        /* Dashboard Widgets */
+        .widget-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
+            margin-bottom: 35px;
         }
 
-        .card {
+        .widget {
             background: white;
-            padding: 25px;
             border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         }
 
-        .card h3 {
-            margin-bottom: 10px;
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
-        .card p {
-            color: #666;
+        .widget-title {
+            font-size: 17px;
+            font-weight: bold;
+            color: #374151;
+        }
+
+        .widget-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #dc2626;
+            margin-bottom: 8px;
+        }
+
+        .widget-description {
+            color: #6b7280;
+            font-size: 14px;
             line-height: 1.5;
         }
 
-        /* Mobile */
+        /* Section */
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section-header {
+            margin-bottom: 18px;
+        }
+
+        .section-header h2 {
+            font-size: 22px;
+            color: #111827;
+            margin-bottom: 5px;
+        }
+
+        .section-header p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .action-button {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 18px;
+            text-decoration: none;
+            color: #111827;
+            font-weight: bold;
+            transition: 0.2s ease;
+            display: block;
+        }
+
+        .action-button:hover {
+            border-color: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 14px rgba(0, 0, 0, 0.08);
+        }
+
+        .action-button span {
+            display: block;
+            color: #dc2626;
+            font-size: 13px;
+            margin-top: 7px;
+            font-weight: normal;
+        }
+
+        /* Recent Activity */
+        .activity-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .activity-placeholder {
+            text-align: center;
+            padding: 35px 20px;
+            color: #6b7280;
+        }
+
+        .activity-placeholder h3 {
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 17px;
+        }
+
+        .activity-placeholder p {
+            font-size: 14px;
+        }
+
+        /* Footer */
+        footer {
+            background: #111827;
+            color: #9ca3af;
+            text-align: center;
+            padding: 22px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        footer strong {
+            color: white;
+        }
+
+        /* Tablet */
         @media (max-width: 900px) {
-            .dashboard-grid {
+            nav {
+                padding: 18px 25px;
+            }
+
+            .widget-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .quick-actions {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
 
+        /* Mobile */
         @media (max-width: 600px) {
             nav {
-                padding: 20px;
+                padding: 18px 20px;
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
             }
 
-            .dashboard-grid {
+            .nav-links {
+                gap: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .container {
+                padding: 30px 15px;
+            }
+
+            .welcome h1 {
+                font-size: 26px;
+            }
+
+            .widget-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .widget {
+                padding: 20px;
             }
         }
     </style>
@@ -109,131 +282,200 @@
     <!-- Navigation -->
     <nav>
 
-        <h1>🏀 BrgyHoops Admin</h1>
+        <div class="brand">
+            Brgy<span>Hoops</span> Admin
+        </div>
 
-        <a href="/">Back to Home</a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/logout" class="home-button">Logout</a>
+        </div>
 
     </nav>
 
 
     <!-- Main Content -->
-    <div class="container">
+    <main class="container">
 
-        <div class="welcome">
+        <!-- Welcome Header -->
+        <section class="welcome">
 
-            <h2>Administrator Dashboard</h2>
+            <h1>Administrator Dashboard</h1>
 
             <p>
-                Manage the BrgyHoops Inter-Barangay Basketball Tournament.
+                Welcome to the BrgyHoops Tournament Management System.
+                Manage tournaments, teams, players, and other tournament information from this dashboard.
             </p>
 
-        </div>
+        </section>
 
 
-        <!-- Dashboard Cards -->
-        <div class="dashboard-grid">
+        <!-- Dashboard Widgets -->
+        <section class="widget-grid">
 
-            <div class="card">
+            <!-- Tournaments -->
+            <div class="widget">
 
-                <h3>🏀 Tournaments</h3>
+                <div class="widget-header">
+                    <div class="widget-title">
+                        Tournaments
+                    </div>
+                </div>
 
-                <p>
-                    Create and manage basketball tournaments.
+                <div class="widget-number">
+                    0
+                </div>
+
+                <p class="widget-description">
+                    View and manage basketball tournaments.
                 </p>
 
             </div>
 
 
-            <div class="card">
+            <!-- Teams -->
+            <div class="widget">
 
-                <h3>👥 Teams</h3>
+                <div class="widget-header">
+                    <div class="widget-title">
+                        Teams
+                    </div>
+                </div>
 
-                <p>
+                <div class="widget-number">
+                    0
+                </div>
+
+                <p class="widget-description">
                     Manage participating teams and barangays.
                 </p>
 
             </div>
 
 
-            <div class="card">
+            <!-- Players -->
+            <div class="widget">
 
-                <h3>🧑 Players</h3>
+                <div class="widget-header">
+                    <div class="widget-title">
+                        Players
+                    </div>
+                </div>
+
+                <div class="widget-number">
+                    0
+                </div>
+
+                <p class="widget-description">
+                    Review and manage registered players.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- Quick Actions -->
+        <section class="section">
+
+            <div class="section-header">
+
+                <h2>Quick Actions</h2>
 
                 <p>
-                    Review and manage player information.
+                    Quickly access common administrator tasks.
                 </p>
 
             </div>
 
 
-            <div class="card">
+            <div class="quick-actions">
 
-                <h3>✅ Approvals</h3>
+                <a href="#" class="action-button">
+                    Manage Tournaments
+                    <span>Create or update tournament information</span>
+                </a>
+
+
+                <a href="#" class="action-button">
+                    Manage Teams
+                    <span>Review participating teams</span>
+                </a>
+
+
+                <a href="#" class="action-button">
+                    Manage Players
+                    <span>Review player information</span>
+                </a>
+
+
+                <a href="#" class="action-button">
+                    Game Schedule
+                    <span>View and manage scheduled games</span>
+                </a>
+
+
+                <a href="#" class="action-button">
+                    Game Results
+                    <span>Review tournament game results</span>
+                </a>
+
+
+                <a href="#" class="action-button">
+                    Announcements
+                    <span>Manage tournament announcements</span>
+                </a>
+
+            </div>
+
+        </section>
+
+
+        <!-- Recent Activity -->
+        <section class="section">
+
+            <div class="section-header">
+
+                <h2>Recent Activity</h2>
 
                 <p>
-                    Approve or reject teams and players.
+                    Recent administrator and tournament activity will appear here.
                 </p>
 
             </div>
 
 
-            <div class="card">
+            <div class="activity-card">
 
-                <h3>📅 Game Schedule</h3>
+                <div class="activity-placeholder">
 
-                <p>
-                    Manage game dates, times, and schedules.
-                </p>
+                    <h3>No recent activity</h3>
 
-            </div>
+                    <p>
+                        Recent tournament, team, player, and system activities will be displayed in this section.
+                    </p>
 
-
-            <div class="card">
-
-                <h3>📍 Venues</h3>
-
-                <p>
-                    Manage tournament game venues.
-                </p>
+                </div>
 
             </div>
 
+        </section>
 
-            <div class="card">
-
-                <h3>📊 Game Results</h3>
-
-                <p>
-                    Record final scores and game results.
-                </p>
-
-            </div>
+    </main>
 
 
-            <div class="card">
+    <!-- Footer -->
+    <footer>
 
-                <h3>🏆 Standings</h3>
+        <p>
+            <strong>BrgyHoops</strong> — Inter-Barangay Basketball Tournament Management System
+        </p>
 
-                <p>
-                    View tournament standings and records.
-                </p>
+        <p>
+            Administrator Dashboard
+        </p>
 
-            </div>
-
-
-            <div class="card">
-
-                <h3>📢 Announcements</h3>
-
-                <p>
-                    Create and manage tournament announcements.
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
+    </footer>
 
 </body>
 </html>
