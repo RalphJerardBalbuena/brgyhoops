@@ -78,7 +78,7 @@
 
         /* Welcome */
         .welcome {
-            margin-bottom: 35px;
+            margin-bottom: 25px;
         }
 
         .welcome h1 {
@@ -91,6 +91,61 @@
             color: #6b7280;
             font-size: 16px;
             line-height: 1.6;
+        }
+
+        /* Active Tournament */
+        .active-tournament {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-left: 5px solid #dc2626;
+            border-radius: 10px;
+            padding: 22px 25px;
+            margin-bottom: 35px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .active-tournament-info h2 {
+            color: #111827;
+            font-size: 21px;
+            margin-bottom: 7px;
+        }
+
+        .active-tournament-info p {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .tournament-status {
+            display: inline-block;
+            margin-top: 8px;
+            background: #f3f4f6;
+            color: #374151;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .change-tournament-button {
+            display: inline-block;
+            background: #111827;
+            color: white;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: 0.2s ease;
+        }
+
+        .change-tournament-button:hover {
+            background: #dc2626;
         }
 
         /* Dashboard Cards */
@@ -333,6 +388,11 @@
             .actions-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+
+            .active-tournament {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
 
         /* Mobile */
@@ -368,8 +428,14 @@
             .status-card,
             .roster-card,
             .game-card,
-            .activity-card {
+            .activity-card,
+            .active-tournament {
                 padding: 20px;
+            }
+
+            .change-tournament-button {
+                width: 100%;
+                text-align: center;
             }
         }
     </style>
@@ -386,6 +452,7 @@
 
         <div class="nav-links">
             <a href="/">Home</a>
+            <a href="{{ route('tournaments.index') }}">Change Tournament</a>
             <a href="/logout" class="home-button">Logout</a>
         </div>
 
@@ -404,6 +471,41 @@
                 Manage your team, players, tournament schedule,
                 and other team-related activities from this dashboard.
             </p>
+
+        </section>
+
+
+        <!-- Active Tournament -->
+        <section class="active-tournament">
+
+            <div class="active-tournament-info">
+
+                <h2>
+                    {{ $activeTournament->name }}
+                </h2>
+
+                <p>
+                    You are currently managing this tournament.
+                </p>
+
+                @if ($activeTournament->description)
+                    <p>
+                        {{ $activeTournament->description }}
+                    </p>
+                @endif
+
+                <span class="tournament-status">
+                    Status: {{ ucfirst($activeTournament->status) }}
+                </span>
+
+            </div>
+
+            <a
+                href="{{ route('tournaments.index') }}"
+                class="change-tournament-button"
+            >
+                Change Tournament
+            </a>
 
         </section>
 

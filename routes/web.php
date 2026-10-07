@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TournamentController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -9,7 +10,7 @@ Route::get('/', function () {
 
 Route::get('/login', function () {
     return view('auth.login');
-});
+})->name('login');
 
 Route::get('/register', function () {
     return view('auth.register');
@@ -23,9 +24,17 @@ Route::get('/admin', function () {
     return view('admin.dashboard');
 });
 
-Route::get('/manager', function () {
-    return view('manager.dashboard');
-});
+Route::get('/manager', [TournamentController::class, 'managerDashboard'])
+    ->middleware('auth')
+    ->name('manager.dashboard');
+
+Route::get('/tournaments', [TournamentController::class, 'index'])
+    ->middleware('auth')
+    ->name('tournaments.index');
+
+Route::post('/tournaments/{tournament}/select', [TournamentController::class, 'select'])
+    ->middleware('auth')
+    ->name('tournaments.select');
 
 Route::get('/tournament', function () {
     return view('public.dashboard');
