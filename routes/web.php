@@ -23,9 +23,21 @@ Route::post('/register', [AuthController::class, 'register']);
 
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::get('/admin', function () {
-    return view('admin.dashboard');
-});
+/*
+|--------------------------------------------------------------------------
+| Admin Dashboard
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/admin', [TournamentController::class, 'adminDashboard'])
+    ->middleware('auth')
+    ->name('admin.dashboard');
+
+/*
+|--------------------------------------------------------------------------
+| Manager Dashboard & Tournament Selection
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/manager', [TournamentController::class, 'managerDashboard'])
     ->middleware('auth')
@@ -39,7 +51,15 @@ Route::post('/tournaments/{tournament}/select', [TournamentController::class, 's
     ->middleware('auth')
     ->name('tournaments.select');
 
+/*
+|--------------------------------------------------------------------------
+| Authenticated Team, Game & Standings Management
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware('auth')->group(function () {
+
+    // Teams
     Route::get('/teams', [TeamController::class, 'index'])
         ->name('teams.index');
 
@@ -58,6 +78,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/teams/{team}', [TeamController::class, 'destroy'])
         ->name('teams.destroy');
 
+    // Games
     Route::get('/games', [GameController::class, 'index'])
         ->name('games.index');
 
@@ -76,13 +97,28 @@ Route::middleware('auth')->group(function () {
     Route::delete('/games/{game}', [GameController::class, 'destroy'])
         ->name('games.destroy');
 
+    // Standings
     Route::get('/standings', [StandingController::class, 'index'])
         ->name('standings.index');
 });
 
-Route::get('/tournament', function () {
-    return view('public.dashboard');
-});
+/*
+|--------------------------------------------------------------------------
+| Public Tournament Dashboard
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/tournament', [TournamentController::class, 'publicDashboard'])
+    ->name('public.dashboard');
+
+Route::get('/tournament/{tournament}', [TournamentController::class, 'publicTournamentDashboard'])
+    ->name('public.tournament');
+
+/*
+|--------------------------------------------------------------------------
+| Other Pages
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/forgot-password', function () {
     return view('auth.forgot-password');

@@ -6,7 +6,10 @@
 
     <link rel="stylesheet" href="{{ asset('css/brgyhoops.css') }}">
 
-    <title>BrgyHoops - Public Tournament Dashboard</title>
+    <title>
+        BrgyHoops -
+        {{ $tournament?->name ?? 'Public Tournament Dashboard' }}
+    </title>
 
     <style>
         * {
@@ -415,16 +418,34 @@
         <!-- Hero -->
         <section class="hero">
 
-            <h1>BrgyHoops Tournament</h1>
+            @if ($tournament)
 
-            <p>
-                Inter-Barangay Basketball Tournament Information
-            </p>
+                <h1>{{ $tournament->name }}</h1>
 
-            <p>
-                View tournament updates, participating teams,
-                upcoming games, and announcements.
-            </p>
+                <p>
+                    Inter-Barangay Basketball Tournament Information
+                </p>
+
+                @if ($tournament->description)
+                    <p>
+                        {{ $tournament->description }}
+                    </p>
+                @else
+                    <p>
+                        View tournament updates, participating teams,
+                        upcoming games, and announcements.
+                    </p>
+                @endif
+
+            @else
+
+                <h1>BrgyHoops Tournament</h1>
+
+                <p>
+                    No active tournament is currently available.
+                </p>
+
+            @endif
 
         </section>
 
@@ -450,7 +471,20 @@
                     <h3>Tournament</h3>
 
                     <p>
-                        BrgyHoops Inter-Barangay Basketball Tournament
+                        {{ $tournament?->name ?? 'No tournament selected' }}
+                    </p>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <h3>Status</h3>
+
+                    <p>
+                        {{ $tournament?->status
+                            ? ucfirst($tournament->status)
+                            : 'Unavailable' }}
                     </p>
 
                 </div>
@@ -461,7 +495,7 @@
                     <h3>Participating Teams</h3>
 
                     <p>
-                        View approved teams participating in the tournament.
+                        {{ $teams->count() }} team(s) participating in this tournament.
                     </p>
 
                 </div>
@@ -472,18 +506,7 @@
                     <h3>Game Schedule</h3>
 
                     <p>
-                        View upcoming games, dates, times, and venues.
-                    </p>
-
-                </div>
-
-
-                <div class="info-card">
-
-                    <h3>Standings</h3>
-
-                    <p>
-                        Tournament standings and team records will be displayed here.
+                        {{ $games->count() }} upcoming game(s) scheduled for this tournament.
                     </p>
 
                 </div>
@@ -545,59 +568,53 @@
                 <h2>Participating Teams</h2>
 
                 <p>
-                    Approved teams participating in the tournament.
+                    Approved teams participating in
+                    {{ $tournament?->name ?? 'the tournament' }}.
                 </p>
 
             </div>
 
 
-            <div class="teams-grid">
+            @if ($teams->count())
 
-                <div class="team-card">
+                <div class="teams-grid">
 
-                    <span class="team-status">
-                        Approved
-                    </span>
+                    @foreach ($teams as $team)
 
-                    <h3>Barangay A</h3>
+                        <div class="team-card">
+
+                            <span class="team-status">
+                                Participating
+                            </span>
+
+                            <h3>
+                                {{ $team->name }}
+                            </h3>
+
+                            <p>
+                                {{ $team->description
+                                    ?: 'Participating basketball team.' }}
+                            </p>
+
+                        </div>
+
+                    @endforeach
+
+                </div>
+
+            @else
+
+                <div class="placeholder">
+
+                    <h3>No Teams Available</h3>
 
                     <p>
-                        Participating basketball team.
+                        No participating teams have been added to this tournament yet.
                     </p>
 
                 </div>
 
-
-                <div class="team-card">
-
-                    <span class="team-status">
-                        Approved
-                    </span>
-
-                    <h3>Barangay B</h3>
-
-                    <p>
-                        Participating basketball team.
-                    </p>
-
-                </div>
-
-
-                <div class="team-card">
-
-                    <span class="team-status">
-                        Approved
-                    </span>
-
-                    <h3>Barangay C</h3>
-
-                    <p>
-                        Participating basketball team.
-                    </p>
-
-                </div>
-
-            </div>
+            @endif
 
         </section>
 
@@ -610,48 +627,69 @@
                 <h2>Upcoming Games</h2>
 
                 <p>
-                    View publicly available upcoming tournament games.
+                    View publicly available upcoming games for
+                    {{ $tournament?->name ?? 'the tournament' }}.
                 </p>
 
             </div>
 
 
-            <div class="game-card">
+            @if ($games->count())
 
-                <h3>Barangay A vs Barangay B</h3>
+                @foreach ($games as $game)
 
-                <div class="game-details">
+                    <div class="game-card">
 
-                    <p>Date: To be announced</p>
-                    <p>Time: To be announced</p>
-                    <p>Venue: To be announced</p>
+                        <h3>
+                            {{ $game->homeTeam?->name ?? 'Home Team' }}
+                            vs
+                            {{ $game->awayTeam?->name ?? 'Away Team' }}
+                        </h3>
+
+                        <div class="game-details">
+
+                            <p>
+                                Date:
+                                {{ $game->scheduled_at
+                                    ? $game->scheduled_at->format('F d, Y')
+                                    : 'To be announced' }}
+                            </p>
+
+                            <p>
+                                Time:
+                                {{ $game->scheduled_at
+                                    ? $game->scheduled_at->format('h:i A')
+                                    : 'To be announced' }}
+                            </p>
+
+                            <p>
+                                Venue:
+                                {{ $game->venue ?? 'To be announced' }}
+                            </p>
+
+                        </div>
+
+                        <span class="game-status">
+                            {{ ucfirst($game->status) }}
+                        </span>
+
+                    </div>
+
+                @endforeach
+
+            @else
+
+                <div class="placeholder">
+
+                    <h3>No Upcoming Games</h3>
+
+                    <p>
+                        No upcoming games have been scheduled for this tournament yet.
+                    </p>
 
                 </div>
 
-                <span class="game-status">
-                    Scheduled
-                </span>
-
-            </div>
-
-
-            <div class="game-card">
-
-                <h3>Barangay B vs Barangay C</h3>
-
-                <div class="game-details">
-
-                    <p>Date: To be announced</p>
-                    <p>Time: To be announced</p>
-                    <p>Venue: To be announced</p>
-
-                </div>
-
-                <span class="game-status">
-                    Scheduled
-                </span>
-
-            </div>
+            @endif
 
         </section>
 
@@ -675,7 +713,7 @@
                 <h3>Tournament Announcement</h3>
 
                 <div class="announcement-date">
-                    Tournament Update
+                    {{ $tournament?->name ?? 'Tournament Update' }}
                 </div>
 
                 <p>

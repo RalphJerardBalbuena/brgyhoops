@@ -61,4 +61,68 @@ class TournamentController extends Controller
 
         return view('manager.dashboard', compact('activeTournament'));
     }
+
+    /**
+     * Show the admin dashboard with tournament context.
+     */
+    public function adminDashboard()
+    {
+        $user = auth()->user();
+
+        if ($user->role !== 'admin') {
+            abort(403);
+        }
+
+        $tournaments = Tournament::withCount(['teams', 'games'])
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.dashboard', compact('tournaments'));
+    }
+
+    /**
+     * Show the default public tournament dashboard.
+     *
+     * Opens the first ongoing tournament, or the first upcoming
+     * tournament if there is no ongoing tournament.
+     */
+    public function publicDashboard()
+    {
+        $tournament = Tournament::whereIn('status', ['ongoing', 'upcoming'])
+            ->orderByRaw("CASE WHEN status = 'ongoing' THEN 0 ELSE 1 END")
+            ->orderBy('start_date')
+            ->first();
+
+        if (!$tournament) {
+            return view('public.dashboard', [
+                'tournament' => null,
+                'teams' => collect(),
+                'games' => collect(),
+            ]);
+        }
+
+        return redirect()->route('public.tournament', $tournament);
+    }
+
+    /**
+     * Show the public dashboard for a specific tournament.
+     */
+    public function publicTournamentDashboard(Tournament $tournament)
+    {
+        $teams = $tournament->teams()
+            ->orderBy('name')
+            ->get();
+
+        $games = $tournament->games()
+            ->with(['homeTeam', 'awayTeam'])
+            ->where('status', 'scheduled')
+            ->orderBy('scheduled_at')
+            ->get();
+
+        return view('public.dashboard', compact(
+            'tournament',
+            'teams',
+            'games'
+        ));
+    }
 }

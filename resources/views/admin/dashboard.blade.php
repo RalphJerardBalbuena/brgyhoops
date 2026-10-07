@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    link rel="stylesheet" href="{{ asset('css/brgyhoops.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/brgyhoops.css') }}">
 
     <title>BrgyHoops - Administrator Dashboard</title>
 
@@ -187,6 +187,51 @@
             font-weight: normal;
         }
 
+        /* Tournament Context */
+        .tournament-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .tournament-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .tournament-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 18px;
+            background: #fafafa;
+        }
+
+        .tournament-item h3 {
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .tournament-item p {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .tournament-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #dc2626;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .tournament-link:hover {
+            text-decoration: underline;
+        }
+
         /* Recent Activity */
         .activity-card {
             background: white;
@@ -290,6 +335,7 @@
 
         <div class="nav-links">
             <a href="/">Home</a>
+            <a href="/tournament" class="home-button">Public Dashboard</a>
             <a href="/logout" class="home-button">Logout</a>
         </div>
 
@@ -325,7 +371,7 @@
                 </div>
 
                 <div class="widget-number">
-                    0
+                    {{ $tournaments->count() }}
                 </div>
 
                 <p class="widget-description">
@@ -345,11 +391,11 @@
                 </div>
 
                 <div class="widget-number">
-                    0
+                    {{ $tournaments->sum('teams_count') }}
                 </div>
 
                 <p class="widget-description">
-                    Manage participating teams and barangays.
+                    Manage participating teams across tournaments.
                 </p>
 
             </div>
@@ -365,12 +411,84 @@
                 </div>
 
                 <div class="widget-number">
-                    0
+                    {{ \App\Models\User::where('role', 'player')->count() }}
                 </div>
 
                 <p class="widget-description">
                     Review and manage registered players.
                 </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- Tournament Context -->
+        <section class="section">
+
+            <div class="section-header">
+
+                <h2>Tournament Context</h2>
+
+                <p>
+                    View tournament-specific information and public tournament dashboards.
+                </p>
+
+            </div>
+
+            <div class="tournament-card">
+
+                @if ($tournaments->isEmpty())
+
+                    <div class="activity-placeholder">
+                        <h3>No tournaments available</h3>
+
+                        <p>
+                            No tournaments have been created yet.
+                        </p>
+                    </div>
+
+                @else
+
+                    <div class="tournament-list">
+
+                        @foreach ($tournaments as $tournament)
+
+                            <div class="tournament-item">
+
+                                <h3>
+                                    {{ $tournament->name }}
+                                </h3>
+
+                                <p>
+                                    <strong>Status:</strong>
+                                    {{ ucfirst($tournament->status) }}
+                                </p>
+
+                                <p>
+                                    <strong>Teams:</strong>
+                                    {{ $tournament->teams_count }}
+                                </p>
+
+                                <p>
+                                    <strong>Games:</strong>
+                                    {{ $tournament->games_count }}
+                                </p>
+
+                                <a
+                                    href="{{ url('/tournament/' . $tournament->id) }}"
+                                    class="tournament-link"
+                                >
+                                    View Public Tournament Dashboard →
+                                </a>
+
+                            </div>
+
+                        @endforeach
+
+                    </div>
+
+                @endif
 
             </div>
 
@@ -393,33 +511,33 @@
 
             <div class="quick-actions">
 
-                <a href="#" class="action-button">
+                <a href="/tournaments" class="action-button">
                     Manage Tournaments
-                    <span>Create or update tournament information</span>
+                    <span>View available tournament information</span>
                 </a>
 
 
-                <a href="#" class="action-button">
+                <a href="/teams" class="action-button">
                     Manage Teams
                     <span>Review participating teams</span>
                 </a>
 
 
-                <a href="#" class="action-button">
-                    Manage Players
-                    <span>Review player information</span>
-                </a>
-
-
-                <a href="#" class="action-button">
+                <a href="/games" class="action-button">
                     Game Schedule
                     <span>View and manage scheduled games</span>
                 </a>
 
 
-                <a href="#" class="action-button">
-                    Game Results
-                    <span>Review tournament game results</span>
+                <a href="/standings" class="action-button">
+                    Standings
+                    <span>View tournament standings</span>
+                </a>
+
+
+                <a href="/tournament" class="action-button">
+                    Public Dashboard
+                    <span>View the public tournament dashboard</span>
                 </a>
 
 
