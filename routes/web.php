@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\StandingController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -74,6 +75,9 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/games/{game}', [GameController::class, 'destroy'])
         ->name('games.destroy');
+
+    Route::get('/standings', [StandingController::class, 'index'])
+        ->name('standings.index');
 });
 
 Route::get('/tournament', function () {

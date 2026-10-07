@@ -86,6 +86,36 @@
         <br>
 
         <div>
+            <label for="home_score">Home Score:</label>
+
+            <input
+                type="number"
+                name="home_score"
+                id="home_score"
+                value="{{ old('home_score') }}"
+                min="0"
+                placeholder="Leave empty if not completed"
+            >
+        </div>
+
+        <br>
+
+        <div>
+            <label for="away_score">Away Score:</label>
+
+            <input
+                type="number"
+                name="away_score"
+                id="away_score"
+                value="{{ old('away_score') }}"
+                min="0"
+                placeholder="Leave empty if not completed"
+            >
+        </div>
+
+        <br>
+
+        <div>
             <label for="venue">Venue:</label>
 
             <input

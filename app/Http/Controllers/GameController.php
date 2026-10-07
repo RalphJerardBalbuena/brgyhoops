@@ -83,6 +83,8 @@ class GameController extends Controller
             'home_team_id' => 'required|integer|different:away_team_id',
             'away_team_id' => 'required|integer|different:home_team_id',
             'scheduled_at' => 'required|date',
+            'home_score' => 'nullable|integer|min:0',
+            'away_score' => 'nullable|integer|min:0',
             'venue' => 'nullable|string|max:255',
             'status' => 'required|in:scheduled,completed,cancelled',
         ]);
@@ -102,6 +104,8 @@ class GameController extends Controller
             'home_team_id' => $validated['home_team_id'],
             'away_team_id' => $validated['away_team_id'],
             'scheduled_at' => $validated['scheduled_at'],
+            'home_score' => $validated['home_score'] ?? null,
+            'away_score' => $validated['away_score'] ?? null,
             'venue' => $validated['venue'] ?? null,
             'status' => $validated['status'],
         ]);
@@ -156,6 +160,8 @@ class GameController extends Controller
             'home_team_id' => 'required|integer|different:away_team_id',
             'away_team_id' => 'required|integer|different:home_team_id',
             'scheduled_at' => 'required|date',
+            'home_score' => 'nullable|integer|min:0',
+            'away_score' => 'nullable|integer|min:0',
             'venue' => 'nullable|string|max:255',
             'status' => 'required|in:scheduled,completed,cancelled',
         ]);
@@ -175,6 +181,8 @@ class GameController extends Controller
             'home_team_id' => $validated['home_team_id'],
             'away_team_id' => $validated['away_team_id'],
             'scheduled_at' => $validated['scheduled_at'],
+            'home_score' => $validated['home_score'] ?? null,
+            'away_score' => $validated['away_score'] ?? null,
             'venue' => $validated['venue'] ?? null,
             'status' => $validated['status'],
         ]);

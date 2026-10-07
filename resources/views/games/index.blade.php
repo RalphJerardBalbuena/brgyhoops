@@ -17,7 +17,8 @@
     <p>
         <a href="{{ route('manager.dashboard') }}">Back to Dashboard</a> |
         <a href="{{ route('teams.index') }}">Manage Teams</a> |
-        <a href="{{ route('games.create') }}">Schedule New Game</a>
+        <a href="{{ route('games.create') }}">Schedule New Game</a> |
+        <a href="{{ route('standings.index') }}">View Standings</a>
     </p>
 
     @if (session('success'))
@@ -35,6 +36,7 @@
                     <th>Date & Time</th>
                     <th>Home Team</th>
                     <th>Away Team</th>
+                    <th>Score</th>
                     <th>Venue</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -54,6 +56,14 @@
 
                         <td>
                             {{ $game->awayTeam->name }}
+                        </td>
+
+                        <td>
+                            @if ($game->home_score !== null && $game->away_score !== null)
+                                {{ $game->home_score }} - {{ $game->away_score }}
+                            @else
+                                Not played
+                            @endif
                         </td>
 
                         <td>
