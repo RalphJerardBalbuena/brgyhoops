@@ -8,16 +8,18 @@ use Illuminate\Http\Request;
 class TournamentController extends Controller
 {
     /**
-     * Show tournaments assigned to the logged-in user.
+     * Show the upcoming and ongoing tournaments the logged-in user may manage.
      */
     public function index()
     {
         $tournaments = auth()->user()
-            ->tournaments()
-            ->whereIn('status', ['upcoming', 'ongoing'])
+            ->manageableTournaments()
+            ->orderBy('tournaments.name')
             ->get();
 
-        return view('tournaments.index', compact('tournaments'));
+        $activeTournamentId = (int) session('active_tournament_id');
+
+        return view('tournaments.index', compact('tournaments', 'activeTournamentId'));
     }
 
     /**
@@ -27,11 +29,15 @@ class TournamentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->tournaments()->where('tournaments.id', $tournament->id)->exists()) {
+        if (!$user->manageableTournaments()->where('tournaments.id', $tournament->id)->exists()) {
             abort(403);
         }
 
         session(['active_tournament_id' => $tournament->id]);
+
+        if ($user->role === 'admin') {
+            return redirect()->route('games.index');
+        }
 
         return redirect('/manager');
     }
@@ -49,7 +55,7 @@ class TournamentController extends Controller
             return redirect()->route('tournaments.index');
         }
 
-        $activeTournament = $user->tournaments()
+        $activeTournament = $user->manageableTournaments()
             ->where('tournaments.id', $activeTournamentId)
             ->first();
 
@@ -59,7 +65,17 @@ class TournamentController extends Controller
             return redirect()->route('tournaments.index');
         }
 
-        return view('manager.dashboard', compact('activeTournament'));
+        // The manager's own teams in this tournament, with their rosters.
+        $teams = $activeTournament->teams()
+            ->where('user_id', $user->id)
+            ->with(['roster' => fn ($query) => $query->orderBy('name')])
+            ->withCount([
+                'players as pending_requests_count' => fn ($query) => $query->where('player_team.status', 'pending'),
+            ])
+            ->orderBy('name')
+            ->get();
+
+        return view('manager.dashboard', compact('activeTournament', 'teams'));
     }
 
     /**
@@ -110,6 +126,7 @@ class TournamentController extends Controller
     public function publicTournamentDashboard(Tournament $tournament)
     {
         $teams = $tournament->teams()
+            ->where('application_status', 'approved')
             ->orderBy('name')
             ->get();
 

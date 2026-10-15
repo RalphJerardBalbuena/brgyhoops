@@ -1,96 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@extends('layouts.app')
 
-    <title>Edit Team - BrgyHoops</title>
+@section('title', 'Edit Team')
 
-    <link rel="stylesheet" href="{{ asset('css/brgyhoops.css') }}">
-</head>
+@section('content')
+    <x-page-header
+        kicker="Team Management"
+        icon="fa-pen-to-square"
+        title="Edit"
+        highlight="Team"
+        description="Update your team's information."
+    >
+        <x-slot:meta>
+            <x-tournament-context :tournament="$activeTournament" />
+        </x-slot:meta>
+    </x-page-header>
 
-<body>
+    <div class="page-body">
+        <div class="container-narrow">
+            @include('partials.flash')
 
-    <main class="container">
-        <section>
-
-            <h1>Edit Team</h1>
-
-            <p>
-                Update your team's information.
-            </p>
-
-            <p>
-                <strong>Active Tournament:</strong>
-                {{ $activeTournament->name }}
-            </p>
-
-            @if ($errors->any())
-                <div>
-                    <strong>Please correct the following errors:</strong>
-
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <form
-                method="POST"
-                action="{{ route('teams.update', $team) }}"
-            >
+            <form method="POST" action="{{ route('teams.update', $team) }}" class="card form-card">
                 @csrf
                 @method('PUT')
 
-                <div>
-                    <label for="name">Team Name</label>
+                @include('teams._form', ['team' => $team])
 
-                    <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        value="{{ old('name', $team->name) }}"
-                        required
-                    >
+                <div class="form-actions">
+                    <a href="{{ route('teams.index') }}" class="button button-light">
+                        Cancel
+                    </a>
+
+                    <button type="submit" class="button button-primary" data-loading-text="Saving…">
+                        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                        Save Changes
+                    </button>
                 </div>
-
-                <div>
-                    <label for="short_name">Short Name</label>
-
-                    <input
-                        type="text"
-                        id="short_name"
-                        name="short_name"
-                        value="{{ old('short_name', $team->short_name) }}"
-                        maxlength="20"
-                    >
-                </div>
-
-                <div>
-                    <label for="description">Description</label>
-
-                    <textarea
-                        id="description"
-                        name="description"
-                        rows="5"
-                    >{{ old('description', $team->description) }}</textarea>
-                </div>
-
-                <button type="submit">
-                    Save Changes
-                </button>
             </form>
-
-            <p>
-                <a href="{{ route('teams.index') }}">
-                    Cancel
-                </a>
-            </p>
-
-        </section>
-    </main>
-
-</body>
-</html>
+        </div>
+    </div>
+@endsection

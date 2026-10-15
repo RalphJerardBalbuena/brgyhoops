@@ -1,0 +1,295 @@
+/* =========================================================
+   BrgyHoops UI feedback: toasts, confirmation dialog, loading.
+   All classes are bh-prefixed so this file is safe on the
+   standalone login/register pages as well as layouts/app.
+   Colours mirror the homepage tokens.
+   ========================================================= */
+
+.bh-toast-region {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1100; /* above the sticky navbar (1000) and Leaflet maps */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(380px, calc(100vw - 32px));
+    pointer-events: none;
+}
+
+/* Below the app navbar when it is present. */
+.navbar ~ .bh-toast-region {
+    top: 94px;
+}
+
+.bh-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 14px 14px 16px;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #111318;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #111318;
+    font-family: 'DM Sans', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    box-shadow: 0 14px 34px rgba(17, 19, 24, .16);
+    pointer-events: auto;
+    transition: opacity .22s ease, transform .22s ease;
+}
+
+.bh-toast.is-entering,
+.bh-toast.is-leaving {
+    opacity: 0;
+    transform: translateX(16px);
+}
+
+.bh-toast-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 17px;
+}
+
+.bh-toast-body {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.bh-toast-title {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+}
+
+.bh-toast-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    margin: -4px -4px 0 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #626976;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.bh-toast-close:hover,
+.bh-toast-close:focus-visible {
+    background: #f5f6f8;
+    color: #111318;
+}
+
+.bh-toast-close:focus-visible,
+.bh-dialog button:focus-visible {
+    outline: 3px solid rgba(226, 27, 35, .45);
+    outline-offset: 2px;
+}
+
+.bh-toast-success { border-left-color: #167a3e; }
+.bh-toast-success .bh-toast-icon,
+.bh-toast-success .bh-toast-title { color: #167a3e; }
+
+.bh-toast-error { border-left-color: #e21b23; }
+.bh-toast-error .bh-toast-icon,
+.bh-toast-error .bh-toast-title { color: #e21b23; }
+
+.bh-toast-warning { border-left-color: #e0a100; }
+.bh-toast-warning .bh-toast-icon,
+.bh-toast-warning .bh-toast-title { color: #8a5a00; }
+
+.bh-toast-info { border-left-color: #1f4fa3; }
+.bh-toast-info .bh-toast-icon,
+.bh-toast-info .bh-toast-title { color: #1f4fa3; }
+
+/* =========================================================
+   Confirmation dialog (native <dialog>)
+   ========================================================= */
+
+.bh-dialog {
+    width: min(440px, calc(100vw - 32px));
+    padding: 0;
+    border: 0;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #111318;
+    font-family: 'DM Sans', Arial, sans-serif;
+    box-shadow: 0 30px 70px rgba(17, 19, 24, .35);
+}
+
+.bh-dialog::backdrop {
+    background: rgba(11, 12, 16, .62);
+}
+
+.bh-dialog[open] {
+    animation: bh-dialog-in .18s ease-out;
+}
+
+.bh-dialog-inner {
+    padding: 28px 26px 24px;
+}
+
+.bh-dialog-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    margin-bottom: 16px;
+    border-radius: 14px;
+    background: #f5f6f8;
+    color: #111318;
+    font-size: 21px;
+}
+
+.bh-dialog-danger .bh-dialog-icon {
+    background: #fff0f1;
+    color: #e21b23;
+}
+
+.bh-dialog-title {
+    margin: 0 0 8px;
+    font-family: 'Barlow Condensed', Arial Narrow, sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.05;
+    text-transform: uppercase;
+}
+
+.bh-dialog-message {
+    margin: 0;
+    color: #444955;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.bh-dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.bh-dialog-actions button {
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #111318;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.bh-dialog-actions .bh-dialog-confirm {
+    border-color: #111318;
+    background: #111318;
+    color: #ffffff;
+}
+
+.bh-dialog-danger .bh-dialog-confirm {
+    border-color: #e21b23;
+    background: #e21b23;
+}
+
+.bh-dialog-actions .bh-dialog-confirm:hover {
+    filter: brightness(.92);
+}
+
+.bh-dialog-actions .bh-dialog-cancel:hover {
+    border-color: #111318;
+}
+
+@keyframes bh-dialog-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(.98);
+    }
+}
+
+/* =========================================================
+   Loading state for submit buttons
+   ========================================================= */
+
+.bh-is-loading {
+    cursor: progress !important;
+    pointer-events: none;
+    opacity: .85;
+}
+
+.bh-spinner {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    vertical-align: -0.15em;
+    animation: bh-spin .7s linear infinite;
+}
+
+@keyframes bh-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.bh-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+/* =========================================================
+   Small screens: toasts along the bottom edge
+   ========================================================= */
+
+@media (max-width: 760px) {
+    .bh-toast-region,
+    .navbar ~ .bh-toast-region {
+        top: auto;
+        right: 16px;
+        bottom: 16px;
+        left: 16px;
+        width: auto;
+    }
+
+    .bh-toast.is-entering,
+    .bh-toast.is-leaving {
+        transform: translateY(12px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bh-toast,
+    .bh-dialog[open] {
+        transition: none;
+        animation: none;
+    }
+
+    .bh-toast.is-entering,
+    .bh-toast.is-leaving {
+        transform: none;
+    }
+
+    .bh-spinner {
+        animation-duration: 1.6s;
+    }
+}

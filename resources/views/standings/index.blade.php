@@ -1,70 +1,112 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tournament Standings</title>
-    <link rel="stylesheet" href="{{ asset('css/brgyhoops.css') }}">
-</head>
-<body>
-    <h1>Tournament Standings</h1>
+@extends('layouts.app')
 
-    <p>
-        <strong>Active Tournament:</strong>
-        {{ $activeTournament->name }}
-    </p>
+@section('title', 'Tournament Standings')
 
-    <p>
-        <a href="{{ route('manager.dashboard') }}">Back to Dashboard</a> |
-        <a href="{{ route('games.index') }}">Game Schedule</a> |
-        <a href="{{ route('teams.index') }}">Manage Teams</a>
-    </p>
+@section('content')
+    <x-page-header
+        kicker="Standings & Results"
+        icon="fa-ranking-star"
+        title="Tournament"
+        highlight="Standings"
+        description="Rankings are based on completed games: 2 points for a win, 1 point for a loss."
+    >
+        <x-slot:meta>
+            <x-tournament-context :tournament="$activeTournament" />
+        </x-slot:meta>
+    </x-page-header>
 
-    @if (empty($standings))
-        <p>No teams are registered in this tournament yet.</p>
-    @else
-        <table border="1" cellpadding="8" cellspacing="0">
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Team</th>
-                    <th>Played</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                    <th>Points</th>
-                </tr>
-            </thead>
+    <div class="page-body">
+        <div class="container">
+            @include('partials.flash')
 
-            <tbody>
-                @foreach ($standings as $index => $standing)
-                    <tr>
-                        <td>
-                            {{ $index + 1 }}
-                        </td>
+            <div class="button-row" style="margin-bottom: 24px;">
+                @if (auth()->user()->role === 'admin')
+                    <a href="{{ route('admin.dashboard') }}" class="button button-light button-sm">
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                        Back to Dashboard
+                    </a>
+                    <a href="{{ route('tournaments.index') }}" class="button button-light button-sm">
+                        <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>
+                        Change Tournament
+                    </a>
+                    <a href="{{ route('games.index') }}" class="button button-light button-sm">
+                        <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                        Game Schedule
+                    </a>
+                @else
+                    <a href="{{ route('manager.dashboard') }}" class="button button-light button-sm">
+                        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                        Back to Dashboard
+                    </a>
+                    <a href="{{ route('tournaments.index') }}" class="button button-light button-sm">
+                        <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>
+                        Change Tournament
+                    </a>
+                    <a href="{{ route('games.index') }}" class="button button-light button-sm">
+                        <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                        Game Schedule
+                    </a>
+                    <a href="{{ route('teams.index') }}" class="button button-light button-sm">
+                        <i class="fa-solid fa-people-group" aria-hidden="true"></i>
+                        Manage Teams
+                    </a>
+                @endif
+            </div>
 
-                        <td>
-                            {{ $standing['team']->name }}
-                        </td>
+            @if (empty($standings))
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fa-solid fa-ranking-star" aria-hidden="true"></i>
+                    </div>
+                    <h3>No standings yet</h3>
+                    <p>No teams are registered in this tournament yet.</p>
+                </div>
+            @else
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="num">Rank</th>
+                                <th>Team</th>
+                                <th class="num">Played</th>
+                                <th class="num">Wins</th>
+                                <th class="num">Losses</th>
+                                <th class="num">Points</th>
+                            </tr>
+                        </thead>
 
-                        <td>
-                            {{ $standing['played'] }}
-                        </td>
+                        <tbody>
+                            @foreach ($standings as $index => $standing)
+                                <tr>
+                                    <td class="num">
+                                        <span class="rank">{{ $index + 1 }}</span>
+                                    </td>
 
-                        <td>
-                            {{ $standing['wins'] }}
-                        </td>
+                                    <td class="team-name">
+                                        {{ $standing['team']->name }}
+                                    </td>
 
-                        <td>
-                            {{ $standing['losses'] }}
-                        </td>
+                                    <td class="num">
+                                        {{ $standing['played'] }}
+                                    </td>
 
-                        <td>
-                            {{ $standing['points'] }}
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    @endif
-</body>
-</html>
+                                    <td class="num">
+                                        {{ $standing['wins'] }}
+                                    </td>
+
+                                    <td class="num">
+                                        {{ $standing['losses'] }}
+                                    </td>
+
+                                    <td class="num">
+                                        <span class="points">{{ $standing['points'] }}</span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+    </div>
+@endsection

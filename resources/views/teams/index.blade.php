@@ -1,92 +1,111 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@extends('layouts.app')
 
-    <title>My Teams - BrgyHoops</title>
+@section('title', 'My Teams')
 
-    <link rel="stylesheet" href="{{ asset('css/brgyhoops.css') }}">
-</head>
+@section('content')
+    <x-page-header
+        kicker="Team Management"
+        icon="fa-people-group"
+        title="My"
+        highlight="Teams"
+        description="Manage your teams for the currently selected tournament."
+    >
+        <x-slot:meta>
+            <x-tournament-context :tournament="$activeTournament" />
+        </x-slot:meta>
 
-<body>
+        <a href="{{ route('teams.create') }}" class="button button-primary">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            Create New Team
+        </a>
+    </x-page-header>
 
-    <main class="container">
-        <section>
-
-            <h1>My Teams</h1>
-
-            <p>
-                Manage your teams for the currently selected tournament.
-            </p>
-
-            <div>
-                <strong>Active Tournament:</strong>
-                {{ $activeTournament->name }}
-            </div>
-
-            @if (session('success'))
-                <p>
-                    {{ session('success') }}
-                </p>
-            @endif
-
-            <p>
-                <a href="{{ route('teams.create') }}">
-                    Create New Team
-                </a>
-            </p>
+    <div class="page-body">
+        <div class="container">
+            @include('partials.flash')
 
             @if ($teams->isEmpty())
-                <p>
-                    You do not have any teams registered for this tournament yet.
-                </p>
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fa-solid fa-people-group" aria-hidden="true"></i>
+                    </div>
+                    <h3>No teams yet</h3>
+                    <p>You do not have any teams registered for this tournament yet.</p>
+
+                    <a href="{{ route('teams.create') }}" class="button button-primary">
+                        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                        Create New Team
+                    </a>
+                </div>
             @else
-                @foreach ($teams as $team)
-                    <article>
-                        <h2>{{ $team->name }}</h2>
+                <div class="grid grid-2">
+                    @foreach ($teams as $team)
+                        <article class="card card-hover card-ring">
+                            <div class="card-top">
+                                <div class="card-icon">
+                                    <i class="fa-solid fa-basketball" aria-hidden="true"></i>
+                                </div>
 
-                        @if ($team->short_name)
-                            <p>
-                                Short Name: {{ $team->short_name }}
-                            </p>
-                        @endif
+                                @if ($team->application_status)
+                                    <x-status-badge :status="$team->application_status" />
+                                @endif
+                            </div>
 
-                        @if ($team->description)
-                            <p>
-                                {{ $team->description }}
-                            </p>
-                        @endif
+                            <h2 class="card-title">{{ $team->name }}</h2>
 
-                        <p>
-                            <a href="{{ route('teams.edit', $team) }}">
-                                Edit Team
-                            </a>
-                        </p>
+                            @if ($team->short_name)
+                                <div class="card-subtitle">
+                                    Short Name: {{ $team->short_name }}
+                                </div>
+                            @endif
 
-                        <form
-                            method="POST"
-                            action="{{ route('teams.destroy', $team) }}"
-                        >
-                            @csrf
-                            @method('DELETE')
+                            @if ($team->description)
+                                <p class="card-text" style="margin-top: 12px;">
+                                    {{ $team->description }}
+                                </p>
+                            @endif
 
-                            <button type="submit">
-                                Delete Team
-                            </button>
-                        </form>
-                    </article>
-                @endforeach
+                            @include('teams._roster', ['team' => $team])
+
+                            <div class="card-footer">
+                                <a href="{{ route('teams.edit', $team) }}" class="button button-light button-sm">
+                                    <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                                    Edit Team
+                                </a>
+
+                                <form
+                                    method="POST"
+                                    action="{{ route('teams.destroy', $team) }}"
+                                    class="inline-form"
+                                    data-confirm="Delete {{ $team->name }}? Its roster, join requests, and scheduled games will also be removed. This cannot be undone."
+                                    data-confirm-title="Delete this team?"
+                                    data-confirm-action="Delete team"
+                                    data-confirm-variant="danger"
+                                >
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <button
+                                        type="submit"
+                                        class="button button-danger button-sm"
+                                        data-loading-text="Deleting…"
+                                    >
+                                        <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                                        Delete Team
+                                    </button>
+                                </form>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
             @endif
 
-            <p>
-                <a href="{{ route('manager.dashboard') }}">
+            <div class="button-row" style="margin-top: 32px;">
+                <a href="{{ route('manager.dashboard') }}" class="button button-light button-sm">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
                     Back to Dashboard
                 </a>
-            </p>
-
-        </section>
-    </main>
-
-</body>
-</html>
+            </div>
+        </div>
+    </div>
+@endsection

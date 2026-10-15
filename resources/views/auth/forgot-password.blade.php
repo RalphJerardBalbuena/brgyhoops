@@ -1,121 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@extends('layouts.app')
 
-    <title>Forgot Password - BrgyHoops</title>
+@section('title', 'Forgot Password')
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-        }
-
-        .container {
-            width: 400px;
-            margin: 100px auto;
-            background: white;
-            padding: 35px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        .description {
-            text-align: center;
-            color: #666;
-            line-height: 1.5;
-            margin-bottom: 30px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-
-        button {
-            width: 100%;
-            padding: 13px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        button:hover {
-            background: #1d4ed8;
-        }
-
-        .back {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            text-decoration: none;
-            color: #2563eb;
-        }
-    </style>
-</head>
-
-<body>
-
-    @include('components.alert')
-
+@section('content')
     <div class="container">
+        <div class="auth-wrap">
+            <div class="card card-ring auth-card">
+                <div class="section-kicker">Account Recovery</div>
 
-        <h1>Forgot Password?</h1>
+                <h1>Forgot <span>Password?</span></h1>
 
-        <p class="description">
-            Enter your email address and we will send you
-            instructions to reset your password.
-        </p>
+                <p class="auth-description">
+                    Enter your email address and we will send you
+                    instructions to reset your password.
+                </p>
 
-        <form action="#" method="POST">
+                @include('partials.flash')
 
-            @csrf
+                <form action="#" method="POST">
+                    @csrf
 
-            <label for="email">Email</label>
+                    <div class="field">
+                        <label for="email">
+                            <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+                            Email
+                        </label>
 
-            <input
-                type="email"
-                id="email"
-                name="email"
-                placeholder="Enter your email"
-                required
-            >
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="Enter your email"
+                            required
+                        >
+                    </div>
 
-            <button type="submit">
-                Send Reset Link
-            </button>
+                    <button type="submit" class="button button-primary button-block" style="margin-top: 22px;">
+                        Send Reset Link
+                        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </button>
+                </form>
 
-        </form>
-
-        <a class="back" href="/login">
-            ← Back to Login
-        </a>
-
+                <a class="auth-back" href="/login">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                    Back to Login
+                </a>
+            </div>
+        </div>
     </div>
-
-</body>
-</html>
+@endsection

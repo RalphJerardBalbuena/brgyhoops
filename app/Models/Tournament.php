@@ -5,11 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class Tournament extends Model
 {
+    /**
+     * Statuses that may be selected for active management.
+     */
+    public const MANAGEABLE_STATUSES = ['upcoming', 'ongoing'];
+
     protected $fillable = [
         'name',
+        'type',
+        'venue',
         'description',
         'start_date',
         'end_date',
@@ -20,6 +28,14 @@ class Tournament extends Model
         'start_date' => 'date',
         'end_date' => 'date',
     ];
+
+    /**
+     * Whether the tournaments.venue column exists (its migration has run).
+     */
+    public static function supportsVenue(): bool
+    {
+        return Schema::hasColumn('tournaments', 'venue');
+    }
 
     public function users(): BelongsToMany
     {

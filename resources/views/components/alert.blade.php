@@ -1,69 +1,71 @@
-@if (session('success'))
-    <div class="alert alert-success">
-        ✅ {{ session('success') }}
-    </div>
-@endif
-
-@if (session('error'))
-    <div class="alert alert-error">
-        ❌ {{ session('error') }}
-    </div>
-@endif
-
-@if (session('warning'))
-    <div class="alert alert-warning">
-        ⚠️ {{ session('warning') }}
-    </div>
-@endif
-
-@if (session('info'))
-    <div class="alert alert-info">
-        ℹ️ {{ session('info') }}
-    </div>
-@endif
-
+{{--
+    Inline validation errors for the standalone auth pages (login/register).
+    Session flash messages are shown as toasts by partials.toasts instead.
+--}}
 @if ($errors->any())
-    <div class="alert alert-error">
-        ❌ Please check the following:
+    <div class="alert alert-error" role="alert">
+        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+        <div>
+            Please check the following:
 
-        <ul>
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
     </div>
 @endif
 
+{{-- Homepage palette (red #e21b23 family) so alerts match on every auth page. --}}
 <style>
     .alert {
-        padding: 15px 20px;
-        margin-bottom: 20px;
-        border-radius: 8px;
-        font-size: 15px;
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+        margin-bottom: 22px;
+        padding: 14px 16px;
+        border: 1px solid transparent;
+        border-left-width: 4px;
+        border-radius: 10px;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .alert > i {
+        margin-top: 3px;
     }
 
     .alert-success {
-        background: #dcfce7;
-        color: #166534;
+        border-color: #b7edca;
+        border-left-color: #167a3e;
+        background: #ecfdf3;
+        color: #176b3a;
     }
 
     .alert-error {
-        background: #fee2e2;
-        color: #991b1b;
+        border-color: #ffcaca;
+        border-left-color: #e21b23;
+        background: #fff0f1;
+        color: #a51d25;
     }
 
     .alert-warning {
-        background: #fef3c7;
-        color: #92400e;
+        border-color: #f6dfa6;
+        border-left-color: #e0a100;
+        background: #fff8e6;
+        color: #8a5a00;
     }
 
     .alert-info {
-        background: #dbeafe;
-        color: #1e40af;
+        border-color: #e5e7eb;
+        border-left-color: #111318;
+        background: #f5f6f8;
+        color: #111318;
     }
 
     .alert ul {
-        margin-top: 8px;
-        margin-left: 20px;
+        margin-top: 6px;
+        margin-left: 18px;
     }
 </style>

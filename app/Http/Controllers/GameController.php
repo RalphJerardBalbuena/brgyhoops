@@ -3,10 +3,99 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
+use App\Models\Tournament;
+use App\Notifications\GameDetails;
+use App\Notifications\GameScheduleChanged;
+use App\Notifications\GameScheduled;
+use App\Support\SafeNotifier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class GameController extends Controller
 {
+    /**
+     * Ensure only admins can create, edit, score, or delete games.
+     */
+    private function authorizeAdmin(): void
+    {
+        abort_unless(
+            auth()->check() && auth()->user()->role === 'admin',
+            403,
+            'Access denied. Administrators only.'
+        );
+    }
+
+    /**
+     * Latitude/longitude attributes to save, if any.
+     *
+     * Empty when the coordinate migration has not run (so saving keeps working
+     * on an unmigrated database) or when the request did not send the fields
+     * (so an omitted pin is preserved). Submitted blanks clear the pin.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, float|null>
+     */
+    private function coordinateAttributes(Request $request, array $validated): array
+    {
+        if (!Game::supportsCoordinates()
+            || (!$request->exists('latitude') && !$request->exists('longitude'))) {
+            return [];
+        }
+
+        $latitude = $validated['latitude'] ?? null;
+        $longitude = $validated['longitude'] ?? null;
+
+        return [
+            'latitude' => $latitude === null ? null : round((float) $latitude, 7),
+            'longitude' => $longitude === null ? null : round((float) $longitude, 7),
+        ];
+    }
+
+    /**
+     * Managers of the game's home and away teams (freshly loaded).
+     *
+     * @return array<int, \App\Models\User|null>
+     */
+    private function teamManagers(Game $game): array
+    {
+        $game->load(['homeTeam.manager', 'awayTeam.manager', 'tournament']);
+
+        return [$game->homeTeam?->manager, $game->awayTeam?->manager];
+    }
+
+    /**
+     * Describe schedule-relevant changes made by the last save.
+     *
+     * Score-only edits and marking a game completed are results, not
+     * schedule changes, so they produce no description (and no email).
+     *
+     * @param  array{matchup: string, scheduled_at: ?string, venue: string, status: string}  $previous
+     * @return array<int, string>
+     */
+    private function describeScheduleChanges(Game $game, array $previous): array
+    {
+        $changes = [];
+
+        if ($game->wasChanged(['home_team_id', 'away_team_id'])) {
+            $changes[] = "Matchup: {$previous['matchup']} → " . GameDetails::matchup($game);
+        }
+
+        if ($game->wasChanged('scheduled_at')) {
+            $changes[] = "Date & time: {$previous['scheduled_at']} → " . $game->scheduled_at?->format('M d, Y h:i A');
+        }
+
+        if ($game->wasChanged('venue')) {
+            $changes[] = "Venue: {$previous['venue']} → " . ($game->venue ?: 'To be announced');
+        }
+
+        if ($game->wasChanged('status') && $game->status !== 'completed') {
+            $changes[] = 'Status: ' . ucfirst($previous['status']) . ' → ' . ucfirst($game->status);
+        }
+
+        return $changes;
+    }
+
     /**
      * Get the active tournament for the authenticated user.
      */
@@ -20,9 +109,86 @@ class GameController extends Controller
             return null;
         }
 
-        return $user->tournaments()
+        return $user->manageableTournaments()
             ->where('tournaments.id', $activeTournamentId)
             ->first();
+    }
+
+    /**
+     * Build the game validator for the active tournament.
+     *
+     * Both teams must belong to the active tournament and be approved. On
+     * create, the form's tournament_id must also match it, so a missing or
+     * stale form is refused. When editing, a team the game already uses is
+     * accepted even if not approved, so existing games stay editable.
+     */
+    private function gameValidator(Request $request, Tournament $activeTournament, bool $creating, ?Game $game = null)
+    {
+        $existingTeamIds = $game ? [(int) $game->home_team_id, (int) $game->away_team_id] : [];
+
+        $rules = [
+            'home_team_id' => 'required|integer|different:away_team_id',
+            'away_team_id' => 'required|integer|different:home_team_id',
+            'scheduled_at' => 'required|date',
+            'home_score' => 'nullable|integer|min:0',
+            'away_score' => 'nullable|integer|min:0',
+            'venue' => 'nullable|string|max:255',
+            // Optional exact map pin: both values or neither.
+            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
+            'status' => 'required|in:scheduled,completed,cancelled',
+        ];
+
+        if ($creating) {
+            $rules['tournament_id'] = ['required', 'integer', Rule::in([$activeTournament->id])];
+        }
+
+        $validator = Validator::make($request->all(), $rules, [
+            'tournament_id.required' => 'The tournament for this form is missing. Please reload the form and try again.',
+            'tournament_id.integer' => 'The tournament for this form is invalid. Please reload the form and try again.',
+            'tournament_id.in' => 'The selected tournament changed. Please review the form and submit again.',
+            'latitude.required_with' => 'Enter both latitude and longitude for the map pin, or leave both blank.',
+            'longitude.required_with' => 'Enter both latitude and longitude for the map pin, or leave both blank.',
+            'latitude.between' => 'The latitude must be between -90 and 90.',
+            'longitude.between' => 'The longitude must be between -180 and 180.',
+        ]);
+
+        $validator->after(function ($validator) use ($request, $activeTournament, $existingTeamIds) {
+            // A stale form's teams belong to another tournament; report only the stale form.
+            if ($validator->errors()->has('tournament_id')) {
+                return;
+            }
+
+            foreach (['home_team_id' => 'home', 'away_team_id' => 'away'] as $field => $label) {
+                if ($validator->errors()->has($field)) {
+                    continue;
+                }
+
+                $team = $activeTournament->teams()
+                    ->whereKey($request->input($field))
+                    ->first();
+
+                if (!$team) {
+                    $validator->errors()->add(
+                        $field,
+                        "The {$label} team must belong to {$activeTournament->name}."
+                    );
+
+                    continue;
+                }
+
+                $alreadyInGame = in_array((int) $team->id, $existingTeamIds, true);
+
+                if ($team->application_status !== 'approved' && !$alreadyInGame) {
+                    $validator->errors()->add(
+                        $field,
+                        "The {$label} team ({$team->name}) must be approved by an admin before it can be scheduled."
+                    );
+                }
+            }
+        });
+
+        return $validator;
     }
 
     /**
@@ -51,6 +217,8 @@ class GameController extends Controller
      */
     public function create()
     {
+        $this->authorizeAdmin();
+
         $activeTournament = $this->getActiveTournament();
 
         if (!$activeTournament) {
@@ -59,11 +227,15 @@ class GameController extends Controller
             return redirect()->route('tournaments.index');
         }
 
+        // Only admin-approved teams can be scheduled.
         $teams = $activeTournament->teams()
+            ->where('application_status', 'approved')
             ->orderBy('name')
             ->get();
 
-        return view('games.create', compact('activeTournament', 'teams'));
+        $coordinatesSupported = Game::supportsCoordinates();
+
+        return view('games.create', compact('activeTournament', 'teams', 'coordinatesSupported'));
     }
 
     /**
@@ -71,6 +243,8 @@ class GameController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorizeAdmin();
+
         $activeTournament = $this->getActiveTournament();
 
         if (!$activeTournament) {
@@ -79,28 +253,18 @@ class GameController extends Controller
             return redirect()->route('tournaments.index');
         }
 
-        $validated = $request->validate([
-            'home_team_id' => 'required|integer|different:away_team_id',
-            'away_team_id' => 'required|integer|different:home_team_id',
-            'scheduled_at' => 'required|date',
-            'home_score' => 'nullable|integer|min:0',
-            'away_score' => 'nullable|integer|min:0',
-            'venue' => 'nullable|string|max:255',
-            'status' => 'required|in:scheduled,completed,cancelled',
-        ]);
+        $validator = $this->gameValidator($request, $activeTournament, true);
 
-        $teamIds = $activeTournament->teams()
-            ->whereIn('id', [
-                $validated['home_team_id'],
-                $validated['away_team_id'],
-            ])
-            ->pluck('id');
-
-        if ($teamIds->count() !== 2) {
-            abort(422, 'Both teams must belong to the active tournament.');
+        if ($validator->fails()) {
+            return redirect()
+                ->route('games.create')
+                ->withErrors($validator)
+                ->withInput($request->except('tournament_id'));
         }
 
-        $activeTournament->games()->create([
+        $validated = $validator->validated();
+
+        $game = $activeTournament->games()->create(array_merge([
             'home_team_id' => $validated['home_team_id'],
             'away_team_id' => $validated['away_team_id'],
             'scheduled_at' => $validated['scheduled_at'],
@@ -108,7 +272,12 @@ class GameController extends Controller
             'away_score' => $validated['away_score'] ?? null,
             'venue' => $validated['venue'] ?? null,
             'status' => $validated['status'],
-        ]);
+        ], $this->coordinateAttributes($request, $validated)));
+
+        // Only announce upcoming games; entering a past result is not a schedule.
+        if ($game->status === 'scheduled') {
+            SafeNotifier::send($this->teamManagers($game), new GameScheduled($game));
+        }
 
         return redirect()
             ->route('games.index')
@@ -120,6 +289,8 @@ class GameController extends Controller
      */
     public function edit(Game $game)
     {
+        $this->authorizeAdmin();
+
         $activeTournament = $this->getActiveTournament();
 
         if (!$activeTournament) {
@@ -132,11 +303,19 @@ class GameController extends Controller
             abort(403);
         }
 
+        // Approved teams, plus the teams this game already uses (so existing
+        // games with not-yet-approved teams remain editable).
         $teams = $activeTournament->teams()
+            ->where(function ($query) use ($game) {
+                $query->where('application_status', 'approved')
+                    ->orWhereIn('id', [$game->home_team_id, $game->away_team_id]);
+            })
             ->orderBy('name')
             ->get();
 
-        return view('games.edit', compact('activeTournament', 'game', 'teams'));
+        $coordinatesSupported = Game::supportsCoordinates();
+
+        return view('games.edit', compact('activeTournament', 'game', 'teams', 'coordinatesSupported'));
     }
 
     /**
@@ -144,6 +323,8 @@ class GameController extends Controller
      */
     public function update(Request $request, Game $game)
     {
+        $this->authorizeAdmin();
+
         $activeTournament = $this->getActiveTournament();
 
         if (!$activeTournament) {
@@ -156,28 +337,27 @@ class GameController extends Controller
             abort(403);
         }
 
-        $validated = $request->validate([
-            'home_team_id' => 'required|integer|different:away_team_id',
-            'away_team_id' => 'required|integer|different:home_team_id',
-            'scheduled_at' => 'required|date',
-            'home_score' => 'nullable|integer|min:0',
-            'away_score' => 'nullable|integer|min:0',
-            'venue' => 'nullable|string|max:255',
-            'status' => 'required|in:scheduled,completed,cancelled',
-        ]);
+        $validator = $this->gameValidator($request, $activeTournament, false, $game);
 
-        $teamIds = $activeTournament->teams()
-            ->whereIn('id', [
-                $validated['home_team_id'],
-                $validated['away_team_id'],
-            ])
-            ->pluck('id');
-
-        if ($teamIds->count() !== 2) {
-            abort(422, 'Both teams must belong to the active tournament.');
+        if ($validator->fails()) {
+            return redirect()
+                ->route('games.edit', $game)
+                ->withErrors($validator)
+                ->withInput();
         }
 
-        $game->update([
+        $validated = $validator->validated();
+
+        // Snapshot the schedule before saving so changes can be described.
+        $previousManagers = $this->teamManagers($game);
+        $previous = [
+            'matchup' => GameDetails::matchup($game),
+            'scheduled_at' => $game->scheduled_at?->format('M d, Y h:i A'),
+            'venue' => $game->venue ?: 'To be announced',
+            'status' => $game->status,
+        ];
+
+        $game->update(array_merge([
             'home_team_id' => $validated['home_team_id'],
             'away_team_id' => $validated['away_team_id'],
             'scheduled_at' => $validated['scheduled_at'],
@@ -185,7 +365,18 @@ class GameController extends Controller
             'away_score' => $validated['away_score'] ?? null,
             'venue' => $validated['venue'] ?? null,
             'status' => $validated['status'],
-        ]);
+        ], $this->coordinateAttributes($request, $validated)));
+
+        // Reload team relations first so the new matchup is described correctly.
+        $currentManagers = $this->teamManagers($game);
+        $changes = $this->describeScheduleChanges($game, $previous);
+
+        if ($changes !== []) {
+            SafeNotifier::send(
+                array_merge($previousManagers, $currentManagers),
+                new GameScheduleChanged($game, $changes)
+            );
+        }
 
         return redirect()
             ->route('games.index')
@@ -197,6 +388,8 @@ class GameController extends Controller
      */
     public function destroy(Game $game)
     {
+        $this->authorizeAdmin();
+
         $activeTournament = $this->getActiveTournament();
 
         if (!$activeTournament) {

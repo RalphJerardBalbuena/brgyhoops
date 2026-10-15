@@ -22,6 +22,13 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    // Google Maps Embed API (iframe only). The key is visible in page HTML,
+    // so restrict it in Google Cloud to the Maps Embed API and your site's
+    // HTTP referrers.
+    'google_maps' => [
+        'embed_key' => env('GOOGLE_MAPS_EMBED_API_KEY'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

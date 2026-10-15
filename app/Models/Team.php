@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Team extends Model
 {
@@ -24,6 +25,24 @@ class Team extends Model
     public function manager(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function players(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'player_team',
+            'team_id',
+            'player_id'
+        )->withPivot('status')->withTimestamps();
+    }
+
+    /**
+     * Players on the team's roster (approved join requests).
+     */
+    public function roster(): BelongsToMany
+    {
+        return $this->players()->wherePivot('status', 'approved');
     }
 
     public function homeGames(): HasMany

@@ -37,8 +37,33 @@ class User extends Authenticatable
         return $this->belongsToMany(Tournament::class);
     }
 
+    /**
+     * Tournaments this user may select for active management.
+     *
+     * Admins may manage any upcoming or ongoing tournament; team managers
+     * only those they are assigned to. Completed tournaments are excluded.
+     */
+    public function manageableTournaments()
+    {
+        $query = $this->role === 'admin'
+            ? Tournament::query()
+            : $this->tournaments();
+
+        return $query->whereIn('tournaments.status', Tournament::MANAGEABLE_STATUSES);
+    }
+
     public function teams(): HasMany
     {
         return $this->hasMany(Team::class);
+    }
+
+    public function joinedTeams(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Team::class,
+            'player_team',
+            'player_id',
+            'team_id'
+        )->withPivot('status')->withTimestamps();
     }
 }

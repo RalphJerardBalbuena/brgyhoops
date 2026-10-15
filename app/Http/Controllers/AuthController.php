@@ -12,7 +12,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
             'role' => 'required|in:team_manager,player',
         ]);
@@ -20,7 +20,7 @@ class AuthController extends Controller
         User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => $request->password,
+            'password' => Hash::make($request->password),
             'role' => $request->role,
         ]);
 
@@ -40,11 +40,47 @@ class AuthController extends Controller
         if (auth()->attempt($credentials)) {
             $request->session()->regenerate();
 
-            return redirect('/');
+            $user = auth()->user();
+
+            $welcome = 'Welcome back, ' . $user->name . '!';
+
+            switch ($user->role) {
+                case 'admin':
+                    return redirect()->route('admin.dashboard')->with('success', $welcome);
+
+                case 'team_manager':
+                    return redirect()->route('tournaments.index')->with('success', $welcome);
+
+                case 'player':
+                    return redirect()->route('player.teams.index')->with('success', $welcome);
+
+                default:
+                    auth()->logout();
+
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+
+                    return redirect('/login')->withErrors([
+                        'email' => 'Your account does not have a valid role.',
+                    ]);
+            }
         }
 
         return back()->withErrors([
             'email' => 'The email or password is incorrect.',
-        ]);
+        ])->onlyInput('email');
+    }
+
+    public function logout(Request $request)
+    {
+        auth()->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/login')->with(
+            'success',
+            'You have been logged out successfully.'
+        );
     }
 }

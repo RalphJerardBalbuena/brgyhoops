@@ -6,10 +6,13 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\StandingController;
+use App\Http\Controllers\PlayerTeamController;
+use App\Http\Controllers\AdminTournamentController;
+use App\Http\Controllers\AdminTeamApplicationController;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('home');
 
 Route::get('/login', function () {
     return view('auth.login');
@@ -17,47 +20,105 @@ Route::get('/login', function () {
 
 Route::get('/register', function () {
     return view('auth.register');
-});
+})->name('register');
 
 Route::post('/register', [AuthController::class, 'register']);
-
 Route::post('/login', [AuthController::class, 'login']);
 
-/*
-|--------------------------------------------------------------------------
-| Admin Dashboard
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/admin', [TournamentController::class, 'adminDashboard'])
+Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
-    ->name('admin.dashboard');
+    ->name('logout');
 
 /*
 |--------------------------------------------------------------------------
-| Manager Dashboard & Tournament Selection
+| Admin Routes
 |--------------------------------------------------------------------------
 */
 
-Route::get('/manager', [TournamentController::class, 'managerDashboard'])
-    ->middleware('auth')
-    ->name('manager.dashboard');
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/admin', [TournamentController::class, 'adminDashboard'])
+        ->name('admin.dashboard');
 
-Route::get('/tournaments', [TournamentController::class, 'index'])
-    ->middleware('auth')
-    ->name('tournaments.index');
+    // Tournaments
+    Route::get('/admin/tournaments', [AdminTournamentController::class, 'index'])
+        ->name('admin.tournaments.index');
 
-Route::post('/tournaments/{tournament}/select', [TournamentController::class, 'select'])
-    ->middleware('auth')
-    ->name('tournaments.select');
+    Route::get('/admin/tournaments/create', [AdminTournamentController::class, 'create'])
+        ->name('admin.tournaments.create');
+
+    Route::post('/admin/tournaments', [AdminTournamentController::class, 'store'])
+        ->name('admin.tournaments.store');
+
+    Route::get('/admin/tournaments/{tournament}/edit', [AdminTournamentController::class, 'edit'])
+        ->name('admin.tournaments.edit');
+
+    Route::put('/admin/tournaments/{tournament}', [AdminTournamentController::class, 'update'])
+        ->name('admin.tournaments.update');
+
+    // Team applications
+    Route::get('/admin/team-applications', [AdminTeamApplicationController::class, 'index'])
+        ->name('admin.team-applications.index');
+
+    Route::patch('/admin/team-applications/{team}/approve', [AdminTeamApplicationController::class, 'approve'])
+        ->name('admin.team-applications.approve');
+
+    Route::patch('/admin/team-applications/{team}/reject', [AdminTeamApplicationController::class, 'reject'])
+        ->name('admin.team-applications.reject');
+});
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated Team, Game & Standings Management
+| Tournament Selection (Team Managers & Admins)
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'role:team_manager,admin'])->group(function () {
+    Route::get('/tournaments', [TournamentController::class, 'index'])
+        ->name('tournaments.index');
+
+    Route::post('/tournaments/{tournament}/select', [TournamentController::class, 'select'])
+        ->name('tournaments.select');
+
+    // Schedule & standings (read-only for managers)
+    Route::get('/games', [GameController::class, 'index'])
+        ->name('games.index');
+
+    Route::get('/standings', [StandingController::class, 'index'])
+        ->name('standings.index');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Game Management (Admins only)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/games/create', [GameController::class, 'create'])
+        ->name('games.create');
+
+    Route::post('/games', [GameController::class, 'store'])
+        ->name('games.store');
+
+    Route::get('/games/{game}/edit', [GameController::class, 'edit'])
+        ->name('games.edit');
+
+    Route::put('/games/{game}', [GameController::class, 'update'])
+        ->name('games.update');
+
+    Route::delete('/games/{game}', [GameController::class, 'destroy'])
+        ->name('games.destroy');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Team Manager Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'role:team_manager'])->group(function () {
+    Route::get('/manager', [TournamentController::class, 'managerDashboard'])
+        ->name('manager.dashboard');
 
     // Teams
     Route::get('/teams', [TeamController::class, 'index'])
@@ -78,28 +139,40 @@ Route::middleware('auth')->group(function () {
     Route::delete('/teams/{team}', [TeamController::class, 'destroy'])
         ->name('teams.destroy');
 
-    // Games
-    Route::get('/games', [GameController::class, 'index'])
-        ->name('games.index');
+    Route::patch('/teams/{team}/submit', [TeamController::class, 'submit'])
+        ->name('teams.submit');
 
-    Route::get('/games/create', [GameController::class, 'create'])
-        ->name('games.create');
+    // Player join requests
+    Route::get('/manager/player-requests', [PlayerTeamController::class, 'requests'])
+        ->name('manager.players.requests');
 
-    Route::post('/games', [GameController::class, 'store'])
-        ->name('games.store');
+    Route::patch('/manager/teams/{team}/players/{playerId}/approve', [PlayerTeamController::class, 'approve'])
+        ->whereNumber('playerId')
+        ->name('manager.players.approve');
 
-    Route::get('/games/{game}/edit', [GameController::class, 'edit'])
-        ->name('games.edit');
+    Route::patch('/manager/teams/{team}/players/{playerId}/reject', [PlayerTeamController::class, 'reject'])
+        ->whereNumber('playerId')
+        ->name('manager.players.reject');
+});
 
-    Route::put('/games/{game}', [GameController::class, 'update'])
-        ->name('games.update');
+/*
+|--------------------------------------------------------------------------
+| Player Routes
+|--------------------------------------------------------------------------
+*/
 
-    Route::delete('/games/{game}', [GameController::class, 'destroy'])
-        ->name('games.destroy');
+Route::middleware(['auth', 'role:player'])->group(function () {
+    Route::get('/player/teams', [PlayerTeamController::class, 'index'])
+        ->name('player.teams.index');
 
-    // Standings
-    Route::get('/standings', [StandingController::class, 'index'])
-        ->name('standings.index');
+    Route::post('/player/teams/{team}/request', [PlayerTeamController::class, 'requestToJoin'])
+        ->name('player.teams.request');
+
+    Route::post('/player/tournament', [PlayerTeamController::class, 'selectTournament'])
+        ->name('player.tournaments.select');
+
+    Route::get('/player/schedule', [PlayerTeamController::class, 'schedule'])
+        ->name('player.schedule');
 });
 
 /*
@@ -122,4 +195,4 @@ Route::get('/tournament/{tournament}', [TournamentController::class, 'publicTour
 
 Route::get('/forgot-password', function () {
     return view('auth.forgot-password');
-});
+})->name('password.request');
