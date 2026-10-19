@@ -53,10 +53,15 @@ class RosterWorkflowTest extends TestCase
             // Dates spanning today make the tournament ongoing.
             'start_date' => Tournament::today()->subWeek()->toDateString(),
             'end_date' => Tournament::today()->addMonth()->toDateString(),
-            'manager_ids' => [$this->manager->id, $this->rival->id],
         ])->assertRedirect(route('admin.tournaments.index'));
 
-        return Tournament::where('name', $name)->firstOrFail();
+        $tournament = Tournament::where('name', $name)->firstOrFail();
+
+        // Creating a tournament assigns no one; give both managers the
+        // participation an approved application would grant.
+        $tournament->users()->attach([$this->manager->id, $this->rival->id]);
+
+        return $tournament;
     }
 
     private function createTeam(User $manager, Tournament $tournament, string $name): Team

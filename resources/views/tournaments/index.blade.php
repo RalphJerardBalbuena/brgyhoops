@@ -49,8 +49,13 @@
                     <h3>No Tournaments Available</h3>
 
                     <p>
-                        There are currently no tournaments assigned to your account.
-                        Please contact your administrator if you think this is a mistake.
+                        @if ($isAdmin)
+                            There are no upcoming or ongoing tournaments to manage right now.
+                        @else
+                            You are not taking part in any tournament yet. Browse the open
+                            tournaments and apply; you will get access once an administrator
+                            approves your application.
+                        @endif
                     </p>
 
                     @unless ($isAdmin)

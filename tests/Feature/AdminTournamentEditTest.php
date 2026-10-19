@@ -112,7 +112,9 @@ class AdminTournamentEditTest extends TestCase
             ->assertSee('Original description')
             ->assertDontSee('name="status"', false)
             ->assertSee('<option value="inter_barangay" selected', false)
-            ->assertSee($this->manager->name);
+            // No manager assignment section on the edit form.
+            ->assertDontSee('Assigned team managers')
+            ->assertDontSee($this->manager->name);
     }
 
     /*

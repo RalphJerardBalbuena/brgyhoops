@@ -10,8 +10,9 @@ use Illuminate\View\View;
  *
  * Any team manager may browse these, assigned or not. Browsing grants
  * nothing: it never writes the session or the tournament_user pivot, and
- * workspace access still comes only from an admin assignment
- * (User::manageableTournaments). Applying to participate is a later step.
+ * workspace access still comes only from participation granted by an
+ * approved application (User::manageableTournaments). Applying is handled by
+ * ManagerTournamentApplicationController; these pages show its status.
  */
 class ManagerOpenTournamentController extends Controller
 {
@@ -28,7 +29,14 @@ class ManagerOpenTournamentController extends Controller
 
         $assignedIds = $this->assignedTournamentIds();
 
-        return view('manager.open-tournaments.index', compact('tournaments', 'assignedIds'));
+        // The manager's own applications, keyed by tournament.
+        $applications = auth()->user()
+            ->tournamentApplications()
+            ->whereIn('tournament_id', $tournaments->modelKeys())
+            ->get()
+            ->keyBy('tournament_id');
+
+        return view('manager.open-tournaments.index', compact('tournaments', 'assignedIds', 'applications'));
     }
 
     /**
@@ -40,7 +48,12 @@ class ManagerOpenTournamentController extends Controller
 
         $isAssigned = in_array($tournament->id, $this->assignedTournamentIds(), true);
 
-        return view('manager.open-tournaments.show', compact('tournament', 'isAssigned'));
+        $application = auth()->user()
+            ->tournamentApplications()
+            ->where('tournament_id', $tournament->id)
+            ->first();
+
+        return view('manager.open-tournaments.show', compact('tournament', 'isAssigned', 'application'));
     }
 
     /**

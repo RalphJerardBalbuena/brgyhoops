@@ -208,13 +208,16 @@ class TournamentAccessTest extends TestCase
                 'type' => 'inter_zone',
                 'start_date' => Tournament::today()->addWeek()->toDateString(),
                 'end_date' => Tournament::today()->addMonth()->toDateString(),
+                // No longer accepted: managers join through applications.
                 'manager_ids' => [$manager->id],
             ])
-            ->assertRedirect(route('admin.tournaments.index'));
+            ->assertRedirect(route('admin.tournaments.index'))
+            ->assertSessionHasNoErrors();
 
         $tournament = Tournament::where('name', 'Barangay Cup')->firstOrFail();
 
-        $this->assertTrue($tournament->users()->whereKey($manager->id)->exists());
+        $this->assertFalse($tournament->users()->whereKey($manager->id)->exists());
+        $this->assertSame(0, $tournament->users()->count());
     }
 
     public function test_admin_can_review_team_applications(): void

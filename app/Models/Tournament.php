@@ -215,7 +215,7 @@ class Tournament extends Model
      * Limit to tournaments open to managers: upcoming only (Asia/Manila date).
      *
      * Browsing an open tournament grants no access; workspace access still
-     * comes only from an admin assignment (see User::manageableTournaments).
+     * comes only from an approved application (see User::manageableTournaments).
      */
     public function scopeOpenForApplications(Builder $query): void
     {
@@ -235,5 +235,13 @@ class Tournament extends Model
     public function games(): HasMany
     {
         return $this->hasMany(Game::class);
+    }
+
+    /**
+     * Managers' applications to take part (not team roster applications).
+     */
+    public function applications(): HasMany
+    {
+        return $this->hasMany(TournamentApplication::class);
     }
 }

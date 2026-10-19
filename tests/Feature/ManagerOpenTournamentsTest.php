@@ -135,7 +135,7 @@ class ManagerOpenTournamentsTest extends TestCase
     |--------------------------------------------------------------------------
     */
 
-    public function test_details_show_tournament_information_and_disabled_request_button(): void
+    public function test_details_show_tournament_information_and_request_button(): void
     {
         $tournament = $this->open('Detail Cup', [
             'type' => 'inter_zone',
@@ -155,8 +155,8 @@ class ManagerOpenTournamentsTest extends TestCase
             ->assertSee('₱125,000.50')
             ->assertSee('Rules and registration notes.')
             ->assertSee('Request to participate')
-            ->assertSee('disabled aria-disabled="true"', false)
-            ->assertSee('Participation requires admin approval. Applications will open in a later update.')
+            ->assertSee('action="' . route('manager.open-tournaments.apply', $tournament) . '"', false)
+            ->assertSee('Participation requires admin approval.')
             ->assertSee('href="' . route('public.tournament', $tournament) . '"', false)
             ->assertDontSee('action="' . route('tournaments.select', $tournament) . '"', false)
             ->assertDontSee('<span class="badge badge-dark">Assigned</span>', false);

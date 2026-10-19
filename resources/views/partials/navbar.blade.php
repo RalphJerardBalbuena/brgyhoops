@@ -14,6 +14,7 @@
             ['Dashboard', 'fa-gauge-high', route('admin.dashboard'), ['admin.dashboard']],
             ['Tournaments', 'fa-trophy', route('admin.tournaments.index'), ['admin.tournaments.*', 'tournaments.*']],
             ['Applications', 'fa-clipboard-check', route('admin.team-applications.index'), ['admin.team-applications.*']],
+            ['Manager Applications', 'fa-file-signature', route('admin.tournament-applications.index'), ['admin.tournament-applications.*']],
             ['Schedule', 'fa-calendar-days', route('games.index'), ['games.*']],
             ['Standings', 'fa-ranking-star', route('standings.index'), ['standings.*']],
         ],

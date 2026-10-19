@@ -57,6 +57,16 @@ class User extends Authenticatable
         return $this->hasMany(Team::class);
     }
 
+    /**
+     * This manager's applications to take part in tournaments.
+     *
+     * Applications never grant access themselves; see manageableTournaments().
+     */
+    public function tournamentApplications(): HasMany
+    {
+        return $this->hasMany(TournamentApplication::class);
+    }
+
     public function joinedTeams(): BelongsToMany
     {
         return $this->belongsToMany(

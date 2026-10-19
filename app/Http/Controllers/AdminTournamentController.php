@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tournament;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -43,32 +42,23 @@ class AdminTournamentController extends Controller
     {
         $this->authorizeAdmin();
 
-        $managers = User::where('role', 'team_manager')
-            ->orderBy('name')
-            ->get();
-
         $venueSupported = Tournament::supportsVenue();
         $prizePoolSupported = Tournament::supportsPrizePool();
 
-        return view('admin.tournaments.create', compact('managers', 'venueSupported', 'prizePoolSupported'));
+        return view('admin.tournaments.create', compact('venueSupported', 'prizePoolSupported'));
     }
 
     /**
-     * Store a tournament and assign team managers.
+     * Store a tournament.
+     *
+     * No managers are assigned here: managers apply to open tournaments and
+     * gain participation only when an admin approves their application.
      */
     public function store(Request $request)
     {
         $this->authorizeAdmin();
 
-        $validated = $request->validate(array_merge($this->tournamentRules(), [
-            'manager_ids' => ['nullable', 'array'],
-            'manager_ids.*' => [
-                'integer',
-                'distinct',
-                Rule::exists('users', 'id')
-                    ->where('role', 'team_manager'),
-            ],
-        ]));
+        $validated = $request->validate($this->tournamentRules());
 
         $attributes = $this->tournamentAttributes($validated);
 
@@ -83,17 +73,13 @@ class AdminTournamentController extends Controller
             $attributes['prize_pool'] = $validated['prize_pool'] ?? null;
         }
 
-        $tournament = Tournament::create($attributes);
-
-        $tournament->users()->sync(
-            $validated['manager_ids'] ?? []
-        );
+        Tournament::create($attributes);
 
         return redirect()
             ->route('admin.tournaments.index')
             ->with(
                 'success',
-                'Tournament created and managers assigned successfully.'
+                'Tournament created successfully. Team managers can apply to take part while it is upcoming.'
             );
     }
 
@@ -104,8 +90,6 @@ class AdminTournamentController extends Controller
     {
         $this->authorizeAdmin();
 
-        $tournament->load('users')->loadCount(['teams', 'games']);
-
         $venueSupported = Tournament::supportsVenue();
         $prizePoolSupported = Tournament::supportsPrizePool();
 
@@ -115,7 +99,7 @@ class AdminTournamentController extends Controller
     /**
      * Update a tournament's details.
      *
-     * Manager assignments, teams, and games are left untouched.
+     * Manager participation, teams, and games are left untouched.
      */
     public function update(Request $request, Tournament $tournament)
     {

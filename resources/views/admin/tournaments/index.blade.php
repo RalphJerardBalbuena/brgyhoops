@@ -104,7 +104,7 @@
 
                         <div class="note">
                             <strong>Managers:</strong>
-                            {{ $tournament->users->pluck('name')->join(', ') ?: 'No managers assigned yet' }}
+                            {{ $tournament->users->pluck('name')->join(', ') ?: 'No managers taking part yet' }}
                         </div>
 
                         <div class="card-footer">
@@ -146,8 +146,8 @@
                         </div>
                         <h3>No tournaments yet</h3>
                         <p>
-                            No tournaments have been created yet. Create a tournament and
-                            assign team managers so they can register their teams.
+                            No tournaments have been created yet. Create a tournament so
+                            team managers can apply to take part and register their teams.
                         </p>
                         <a href="{{ route('admin.tournaments.create') }}" class="button button-primary">
                             <i class="fa-solid fa-plus" aria-hidden="true"></i>

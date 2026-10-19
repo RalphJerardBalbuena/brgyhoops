@@ -126,11 +126,15 @@ class ConcurrentTournamentsTest extends TestCase
                 // Dates spanning today make the tournament ongoing.
                 'start_date' => Tournament::today()->subWeek()->toDateString(),
                 'end_date' => Tournament::today()->addMonth()->toDateString(),
-                'manager_ids' => [$this->manager->id],
             ])
             ->assertRedirect(route('admin.tournaments.index'));
 
         $this->assertSame(3, Tournament::where('status', 'ongoing')->count());
+
+        // Creation assigns no one; grant the participation an approved application would.
+        $charlie = Tournament::where('name', 'Charlie Classic')->firstOrFail();
+        $this->assertSame(0, $charlie->users()->count());
+        $charlie->users()->attach($this->manager->id);
 
         // Existing tournaments are untouched by the new one.
         $this->assertSame('ongoing', $this->alpha->fresh()->status);

@@ -48,6 +48,7 @@
                         @php
                             $isAssigned = in_array($tournament->id, $assignedIds, true);
                             $prizePool = $tournament->formattedPrizePool();
+                            $application = $applications->get($tournament->id);
                         @endphp
 
                         <article class="card card-hover card-ring">
@@ -59,6 +60,9 @@
                                 <div class="button-row">
                                     @if ($isAssigned)
                                         <span class="badge badge-dark">Assigned</span>
+                                    @endif
+                                    @if ($application)
+                                        <span class="badge badge-{{ $application->status }}">Application {{ $application->status }}</span>
                                     @endif
                                     <x-status-badge :status="$tournament->status" />
                                 </div>

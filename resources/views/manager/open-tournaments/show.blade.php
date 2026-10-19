@@ -19,6 +19,10 @@
             @if ($isAssigned)
                 <span class="badge badge-dark">Assigned</span>
             @endif
+
+            @if ($application)
+                <span class="badge badge-{{ $application->status }}">Application {{ $application->status }}</span>
+            @endif
         </x-slot:meta>
 
         <a href="{{ route('manager.open-tournaments.index') }}" class="button button-outline">
@@ -100,18 +104,41 @@
                                 </button>
                             </form>
                         </div>
+                    @elseif ($application?->status === 'pending')
+                        <h2 class="card-title">Application pending</h2>
+
+                        <p class="card-text">
+                            Your application is waiting for an administrator's review. You will get access to
+                            this tournament's workspace only if it is approved.
+                        </p>
+                    @elseif ($application?->status === 'rejected')
+                        <h2 class="card-title">Application rejected</h2>
+
+                        <p class="card-text">
+                            An administrator rejected your application to take part in this tournament.
+                        </p>
+
+                        @if ($application->admin_review_note)
+                            <div class="note">
+                                Reason: {{ $application->admin_review_note }}
+                            </div>
+                        @endif
                     @else
                         <h2 class="card-title">Take part in this tournament</h2>
 
                         <p class="card-text">
-                            Participation requires admin approval. Applications will open in a later update.
+                            Participation requires admin approval. Submitting a request does not give you
+                            access to the tournament until an administrator approves it.
                         </p>
 
                         <div class="card-footer">
-                            <button type="button" class="button button-primary" disabled aria-disabled="true">
-                                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                                Request to participate
-                            </button>
+                            <form method="POST" action="{{ route('manager.open-tournaments.apply', $tournament) }}" class="inline-form">
+                                @csrf
+                                <button type="submit" class="button button-primary" data-loading-text="Submitting…">
+                                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                                    Request to participate
+                                </button>
+                            </form>
 
                             <a href="{{ route('public.tournament', $tournament) }}" class="button button-light">
                                 View public page

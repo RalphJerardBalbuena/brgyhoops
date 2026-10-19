@@ -10,6 +10,8 @@ use App\Http\Controllers\PlayerTeamController;
 use App\Http\Controllers\AdminTournamentController;
 use App\Http\Controllers\AdminTeamApplicationController;
 use App\Http\Controllers\ManagerOpenTournamentController;
+use App\Http\Controllers\ManagerTournamentApplicationController;
+use App\Http\Controllers\AdminTournamentApplicationController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -65,6 +67,16 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::patch('/admin/team-applications/{team}/reject', [AdminTeamApplicationController::class, 'reject'])
         ->name('admin.team-applications.reject');
+
+    // Manager tournament applications (separate from team roster applications)
+    Route::get('/admin/tournament-applications', [AdminTournamentApplicationController::class, 'index'])
+        ->name('admin.tournament-applications.index');
+
+    Route::patch('/admin/tournament-applications/{application}/approve', [AdminTournamentApplicationController::class, 'approve'])
+        ->name('admin.tournament-applications.approve');
+
+    Route::patch('/admin/tournament-applications/{application}/reject', [AdminTournamentApplicationController::class, 'reject'])
+        ->name('admin.tournament-applications.reject');
 });
 
 /*
@@ -127,6 +139,10 @@ Route::middleware(['auth', 'role:team_manager'])->group(function () {
 
     Route::get('/manager/open-tournaments/{tournament}', [ManagerOpenTournamentController::class, 'show'])
         ->name('manager.open-tournaments.show');
+
+    // Applying creates a pending application; access follows only from admin approval.
+    Route::post('/manager/open-tournaments/{tournament}/apply', [ManagerTournamentApplicationController::class, 'store'])
+        ->name('manager.open-tournaments.apply');
 
     // Teams
     Route::get('/teams', [TeamController::class, 'index'])
