@@ -1,6 +1,6 @@
 {{--
     Shared tournament detail fields for the admin create and edit forms.
-    Expects: $venueSupported (bool), and optionally $tournament (edit) — null when creating.
+    Expects: $venueSupported (bool), $prizePoolSupported (bool), and optionally $tournament (edit) — null when creating.
 --}}
 @php
     $tournament = $tournament ?? null;
@@ -39,6 +39,15 @@
         <input id="venue" name="venue" type="text" value="{{ old('venue', $tournament?->venue) }}" placeholder="e.g. San Isidro Covered Court, Quezon City" maxlength="255">
         @error('venue') <div class="field-error">{{ $message }}</div> @enderror
         <div class="field-hint">Use a full address so the map and directions point to the right place. Individual games can still have their own venue.</div>
+    </div>
+    @endif
+
+    @if ($prizePoolSupported ?? false)
+    <div class="field field-full @error('prize_pool') has-error @enderror">
+        <label for="prize_pool"><i class="fa-solid fa-sack-dollar" aria-hidden="true"></i> Prize pool (₱) <span class="optional">(optional)</span></label>
+        <input id="prize_pool" name="prize_pool" type="number" min="0" max="9999999999.99" step="0.01" value="{{ old('prize_pool', $tournament?->prize_pool) }}" placeholder="e.g. 50000">
+        @error('prize_pool') <div class="field-error">{{ $message }}</div> @enderror
+        <div class="field-hint">Total prize money in Philippine pesos. Leave blank if there is no prize pool or it has not been announced.</div>
     </div>
     @endif
 

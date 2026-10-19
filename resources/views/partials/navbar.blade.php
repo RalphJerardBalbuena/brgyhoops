@@ -20,6 +20,7 @@
         'team_manager' => [
             ['Dashboard', 'fa-table-columns', route('manager.dashboard'), ['manager.dashboard']],
             ['Tournaments', 'fa-trophy', route('tournaments.index'), ['tournaments.*']],
+            ['Open Tournaments', 'fa-door-open', route('manager.open-tournaments.index'), ['manager.open-tournaments.*']],
             ['Teams', 'fa-people-group', route('teams.index'), ['teams.*']],
             ['Schedule', 'fa-calendar-days', route('games.index'), ['games.*']],
             ['Standings', 'fa-ranking-star', route('standings.index'), ['standings.*']],

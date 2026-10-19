@@ -48,8 +48,9 @@ class AdminTournamentController extends Controller
             ->get();
 
         $venueSupported = Tournament::supportsVenue();
+        $prizePoolSupported = Tournament::supportsPrizePool();
 
-        return view('admin.tournaments.create', compact('managers', 'venueSupported'));
+        return view('admin.tournaments.create', compact('managers', 'venueSupported', 'prizePoolSupported'));
     }
 
     /**
@@ -77,6 +78,11 @@ class AdminTournamentController extends Controller
             $attributes['venue'] = $validated['venue'] ?? null;
         }
 
+        // Same for the prize pool and its add_prize_pool_to_tournaments migration.
+        if (Tournament::supportsPrizePool()) {
+            $attributes['prize_pool'] = $validated['prize_pool'] ?? null;
+        }
+
         $tournament = Tournament::create($attributes);
 
         $tournament->users()->sync(
@@ -101,8 +107,9 @@ class AdminTournamentController extends Controller
         $tournament->load('users')->loadCount(['teams', 'games']);
 
         $venueSupported = Tournament::supportsVenue();
+        $prizePoolSupported = Tournament::supportsPrizePool();
 
-        return view('admin.tournaments.edit', compact('tournament', 'venueSupported'));
+        return view('admin.tournaments.edit', compact('tournament', 'venueSupported', 'prizePoolSupported'));
     }
 
     /**
@@ -123,6 +130,11 @@ class AdminTournamentController extends Controller
         // venue clears it, matching the create form's optional behavior.
         if (Tournament::supportsVenue() && $request->exists('venue')) {
             $attributes['venue'] = $validated['venue'] ?? null;
+        }
+
+        // The prize pool follows the same rule: omitted keeps it, blank clears it.
+        if (Tournament::supportsPrizePool() && $request->exists('prize_pool')) {
+            $attributes['prize_pool'] = $validated['prize_pool'] ?? null;
         }
 
         $tournament->update($attributes);
@@ -150,6 +162,8 @@ class AdminTournamentController extends Controller
                 ]),
             ],
             'venue' => ['nullable', 'string', 'max:255'],
+            // Pesos; fits the decimal(12, 2) column without rounding.
+            'prize_pool' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:9999999999.99'],
             'description' => ['nullable', 'string'],
             'start_date' => ['required', 'date'],
             'end_date' => [
@@ -161,7 +175,7 @@ class AdminTournamentController extends Controller
     }
 
     /**
-     * Tournament columns (excluding venue) from validated input.
+     * Tournament columns (excluding venue and prize pool) from validated input.
      *
      * Status is never taken from the request: the model derives it from
      * the start and end dates when the tournament is saved.

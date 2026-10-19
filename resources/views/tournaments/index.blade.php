@@ -52,6 +52,13 @@
                         There are currently no tournaments assigned to your account.
                         Please contact your administrator if you think this is a mistake.
                     </p>
+
+                    @unless ($isAdmin)
+                        <a href="{{ route('manager.open-tournaments.index') }}" class="button button-primary">
+                            <i class="fa-solid fa-door-open" aria-hidden="true"></i>
+                            Browse open tournaments
+                        </a>
+                    @endunless
                 </div>
 
             @else

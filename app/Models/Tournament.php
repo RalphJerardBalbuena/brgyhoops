@@ -24,6 +24,15 @@ class Tournament extends Model
     public const MANAGEABLE_STATUSES = ['upcoming', 'ongoing'];
 
     /**
+     * Display labels for tournament types.
+     */
+    public const TYPE_LABELS = [
+        'inter_zone' => 'Inter-Zone',
+        'inter_barangay' => 'Inter-Barangay',
+        'inter_town' => 'Inter-Town',
+    ];
+
+    /**
      * Status is derived from the dates; it stays fillable only so legacy
      * records (missing a date) and internal code can still set it.
      */
@@ -31,6 +40,7 @@ class Tournament extends Model
         'name',
         'type',
         'venue',
+        'prize_pool',
         'description',
         'start_date',
         'end_date',
@@ -40,6 +50,7 @@ class Tournament extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'prize_pool' => 'decimal:2',
     ];
 
     protected static function booted(): void
@@ -64,6 +75,32 @@ class Tournament extends Model
     public static function supportsVenue(): bool
     {
         return Schema::hasColumn('tournaments', 'venue');
+    }
+
+    /**
+     * Whether the tournaments.prize_pool column exists (its migration has run).
+     */
+    public static function supportsPrizePool(): bool
+    {
+        return Schema::hasColumn('tournaments', 'prize_pool');
+    }
+
+    /**
+     * The prize pool as pesos (e.g. "₱50,000.00"), or null when not set.
+     */
+    public function formattedPrizePool(): ?string
+    {
+        $amount = $this->getAttributes()['prize_pool'] ?? null;
+
+        return $amount === null ? null : '₱' . number_format((float) $amount, 2);
+    }
+
+    /**
+     * Display label for the tournament type.
+     */
+    public function typeLabel(): string
+    {
+        return self::TYPE_LABELS[$this->type] ?? 'Basketball Tournament';
     }
 
     /**
@@ -164,6 +201,25 @@ class Tournament extends Model
     public function scopeManageable(Builder $query): void
     {
         $query->withStatus(self::MANAGEABLE_STATUSES);
+    }
+
+    /**
+     * Whether managers may browse the tournament as open (it has not started yet).
+     */
+    public function isOpenForApplications(): bool
+    {
+        return $this->status === 'upcoming';
+    }
+
+    /**
+     * Limit to tournaments open to managers: upcoming only (Asia/Manila date).
+     *
+     * Browsing an open tournament grants no access; workspace access still
+     * comes only from an admin assignment (see User::manageableTournaments).
+     */
+    public function scopeOpenForApplications(Builder $query): void
+    {
+        $query->withStatus('upcoming');
     }
 
     public function users(): BelongsToMany

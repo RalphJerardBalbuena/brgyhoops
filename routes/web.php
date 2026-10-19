@@ -9,6 +9,7 @@ use App\Http\Controllers\StandingController;
 use App\Http\Controllers\PlayerTeamController;
 use App\Http\Controllers\AdminTournamentController;
 use App\Http\Controllers\AdminTeamApplicationController;
+use App\Http\Controllers\ManagerOpenTournamentController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -119,6 +120,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 Route::middleware(['auth', 'role:team_manager'])->group(function () {
     Route::get('/manager', [TournamentController::class, 'managerDashboard'])
         ->name('manager.dashboard');
+
+    // Open tournaments (read-only; browsing grants no access)
+    Route::get('/manager/open-tournaments', [ManagerOpenTournamentController::class, 'index'])
+        ->name('manager.open-tournaments.index');
+
+    Route::get('/manager/open-tournaments/{tournament}', [ManagerOpenTournamentController::class, 'show'])
+        ->name('manager.open-tournaments.show');
 
     // Teams
     Route::get('/teams', [TeamController::class, 'index'])
