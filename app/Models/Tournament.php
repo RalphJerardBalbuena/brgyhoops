@@ -2,18 +2,31 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 
 class Tournament extends Model
 {
     /**
+     * Every tournament lifecycle status.
+     */
+    public const STATUSES = ['upcoming', 'ongoing', 'completed'];
+
+    /**
      * Statuses that may be selected for active management.
      */
     public const MANAGEABLE_STATUSES = ['upcoming', 'ongoing'];
 
+    /**
+     * Status is derived from the dates; it stays fillable only so legacy
+     * records (missing a date) and internal code can still set it.
+     */
     protected $fillable = [
         'name',
         'type',
@@ -29,12 +42,128 @@ class Tournament extends Model
         'end_date' => 'date',
     ];
 
+    protected static function booted(): void
+    {
+        // Keep the stored column in step with the dates whenever a dated
+        // tournament is saved. Undated (legacy) records keep their status.
+        static::saving(function (Tournament $tournament) {
+            $status = static::statusForDates(
+                $tournament->getAttributes()['start_date'] ?? null,
+                $tournament->getAttributes()['end_date'] ?? null,
+            );
+
+            if ($status !== null) {
+                $tournament->setAttribute('status', $status);
+            }
+        });
+    }
+
     /**
      * Whether the tournaments.venue column exists (its migration has run).
      */
     public static function supportsVenue(): bool
     {
         return Schema::hasColumn('tournaments', 'venue');
+    }
+
+    /**
+     * Today's date in the tournament status timezone (Asia/Manila by default).
+     */
+    public static function today(): CarbonInterface
+    {
+        return Carbon::now(config('app.tournament_timezone', 'Asia/Manila'))->startOfDay();
+    }
+
+    /**
+     * The lifecycle status for a date range, or null when either date is missing.
+     *
+     * Both dates are inclusive calendar days: upcoming before the start date,
+     * ongoing from the start date through the end date, completed afterwards.
+     */
+    public static function statusForDates(mixed $startDate, mixed $endDate, ?CarbonInterface $today = null): ?string
+    {
+        if (blank($startDate) || blank($endDate)) {
+            return null;
+        }
+
+        $today = ($today ?? static::today())->toDateString();
+        $start = Carbon::parse($startDate)->toDateString();
+        $end = Carbon::parse($endDate)->toDateString();
+
+        if ($today < $start) {
+            return 'upcoming';
+        }
+
+        return $today <= $end ? 'ongoing' : 'completed';
+    }
+
+    /**
+     * The current status: derived from the dates when both are set, otherwise
+     * the stored value (legacy records keep their status until edited).
+     */
+    protected function status(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value, array $attributes) => static::statusForDates(
+                $attributes['start_date'] ?? null,
+                $attributes['end_date'] ?? null,
+            ) ?? $value,
+        );
+    }
+
+    /**
+     * Whether the tournament is upcoming or ongoing (open for management and joining).
+     */
+    public function isManageable(): bool
+    {
+        return in_array($this->status, self::MANAGEABLE_STATUSES, true);
+    }
+
+    /**
+     * Limit to tournaments whose current status is one of the given statuses.
+     *
+     * Mirrors the status accessor in SQL: dated tournaments are matched by
+     * comparing their dates with today, undated ones by the stored status.
+     *
+     * @param  string|array<int, string>  $statuses
+     */
+    public function scopeWithStatus(Builder $query, string|array $statuses): void
+    {
+        $statuses = array_values(array_intersect(self::STATUSES, (array) $statuses));
+        $today = static::today()->toDateString();
+        $start = $this->qualifyColumn('start_date');
+        $end = $this->qualifyColumn('end_date');
+
+        $query->where(function ($query) use ($statuses, $today, $start, $end) {
+            $query->where(function ($dated) use ($statuses, $today, $start, $end) {
+                $dated->whereNotNull($start)
+                    ->whereNotNull($end)
+                    ->where(function ($matches) use ($statuses, $today, $start, $end) {
+                        foreach ($statuses as $status) {
+                            $matches->orWhere(fn ($range) => match ($status) {
+                                'upcoming' => $range->whereDate($start, '>', $today),
+                                'ongoing' => $range->whereDate($start, '<=', $today)->whereDate($end, '>=', $today),
+                                'completed' => $range->whereDate($end, '<', $today),
+                            });
+                        }
+
+                        if ($statuses === []) {
+                            $matches->whereRaw('1 = 0');
+                        }
+                    });
+            })->orWhere(function ($legacy) use ($statuses, $start, $end) {
+                $legacy->where(fn ($missing) => $missing->whereNull($start)->orWhereNull($end))
+                    ->whereIn($this->qualifyColumn('status'), $statuses);
+            });
+        });
+    }
+
+    /**
+     * Limit to upcoming and ongoing tournaments.
+     */
+    public function scopeManageable(Builder $query): void
+    {
+        $query->withStatus(self::MANAGEABLE_STATUSES);
     }
 
     public function users(): BelongsToMany

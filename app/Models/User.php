@@ -41,7 +41,7 @@ class User extends Authenticatable
      * Tournaments this user may select for active management.
      *
      * Admins may manage any upcoming or ongoing tournament; team managers
-     * only those they are assigned to. Completed tournaments are excluded.
+     * only those they are assigned to. Completed tournaments (by date) are excluded.
      */
     public function manageableTournaments()
     {
@@ -49,7 +49,7 @@ class User extends Authenticatable
             ? Tournament::query()
             : $this->tournaments();
 
-        return $query->whereIn('tournaments.status', Tournament::MANAGEABLE_STATUSES);
+        return $query->manageable();
     }
 
     public function teams(): HasMany

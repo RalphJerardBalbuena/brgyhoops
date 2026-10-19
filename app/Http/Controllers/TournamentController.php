@@ -104,9 +104,13 @@ class TournamentController extends Controller
      */
     public function publicDashboard()
     {
-        $tournament = Tournament::whereIn('status', ['ongoing', 'upcoming'])
-            ->orderByRaw("CASE WHEN status = 'ongoing' THEN 0 ELSE 1 END")
-            ->orderBy('start_date')
+        // Status is derived from the dates, so order in PHP rather than SQL.
+        $tournament = Tournament::manageable()
+            ->get()
+            ->sortBy([
+                fn (Tournament $a, Tournament $b) => ($a->status === 'ongoing' ? 0 : 1) <=> ($b->status === 'ongoing' ? 0 : 1),
+                fn (Tournament $a, Tournament $b) => (string) $a->start_date?->toDateString() <=> (string) $b->start_date?->toDateString(),
+            ])
             ->first();
 
         if (!$tournament) {

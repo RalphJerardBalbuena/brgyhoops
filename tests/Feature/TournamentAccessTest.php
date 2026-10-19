@@ -206,7 +206,8 @@ class TournamentAccessTest extends TestCase
             ->post(route('admin.tournaments.store'), [
                 'name' => 'Barangay Cup',
                 'type' => 'inter_zone',
-                'status' => 'upcoming',
+                'start_date' => Tournament::today()->addWeek()->toDateString(),
+                'end_date' => Tournament::today()->addMonth()->toDateString(),
                 'manager_ids' => [$manager->id],
             ])
             ->assertRedirect(route('admin.tournaments.index'));

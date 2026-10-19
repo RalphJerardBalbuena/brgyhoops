@@ -109,7 +109,7 @@
 
                         <div class="card-footer">
                             <span class="card-text">
-                                @if (in_array($tournament->status, \App\Models\Tournament::MANAGEABLE_STATUSES, true))
+                                @if ($tournament->isManageable())
                                     Open this tournament's workspace.
                                 @else
                                     View this tournament's results.
@@ -122,7 +122,7 @@
                                 Edit
                             </a>
 
-                            @if (in_array($tournament->status, \App\Models\Tournament::MANAGEABLE_STATUSES, true))
+                            @if ($tournament->isManageable())
                                 <form action="{{ route('tournaments.select', $tournament) }}" method="POST" class="inline-form">
                                     @csrf
                                     <button type="submit" class="button button-primary button-sm" data-loading-text="Opening…">

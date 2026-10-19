@@ -151,25 +151,20 @@ class AdminTournamentController extends Controller
             ],
             'venue' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'start_date' => ['nullable', 'date'],
+            'start_date' => ['required', 'date'],
             'end_date' => [
-                'nullable',
+                'required',
                 'date',
                 'after_or_equal:start_date',
-            ],
-            'status' => [
-                'required',
-                Rule::in([
-                    'upcoming',
-                    'ongoing',
-                    'completed',
-                ]),
             ],
         ];
     }
 
     /**
      * Tournament columns (excluding venue) from validated input.
+     *
+     * Status is never taken from the request: the model derives it from
+     * the start and end dates when the tournament is saved.
      *
      * @param  array<string, mixed>  $validated
      * @return array<string, mixed>
@@ -180,9 +175,8 @@ class AdminTournamentController extends Controller
             'name' => $validated['name'],
             'type' => $validated['type'],
             'description' => $validated['description'] ?? null,
-            'start_date' => $validated['start_date'] ?? null,
-            'end_date' => $validated['end_date'] ?? null,
-            'status' => $validated['status'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
         ];
     }
 }

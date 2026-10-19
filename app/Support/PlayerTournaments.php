@@ -33,16 +33,26 @@ class PlayerTournaments
     {
         $memberTournamentIds = self::membershipTeams($player)->pluck('tournament_id');
 
+        $rank = fn (Tournament $tournament) => match ($tournament->status) {
+            'ongoing' => 0,
+            'upcoming' => 1,
+            default => 2,
+        };
+
+        // Status is derived from the dates, so order in PHP rather than SQL.
         return Tournament::query()
             ->where(function ($query) use ($memberTournamentIds) {
-                $query->whereIn('status', self::OPEN_STATUSES)
+                $query->withStatus(self::OPEN_STATUSES)
                     ->orWhereIn('id', $memberTournamentIds);
             })
-            ->orderByRaw("CASE status WHEN 'ongoing' THEN 0 WHEN 'upcoming' THEN 1 ELSE 2 END")
-            ->orderByRaw('start_date IS NULL')
-            ->orderBy('start_date')
-            ->orderBy('name')
-            ->get();
+            ->get()
+            ->sortBy([
+                fn (Tournament $a, Tournament $b) => $rank($a) <=> $rank($b),
+                fn (Tournament $a, Tournament $b) => ($a->start_date === null) <=> ($b->start_date === null),
+                fn (Tournament $a, Tournament $b) => (string) $a->start_date?->toDateString() <=> (string) $b->start_date?->toDateString(),
+                fn (Tournament $a, Tournament $b) => strcasecmp($a->name, $b->name),
+            ])
+            ->values();
     }
 
     /**

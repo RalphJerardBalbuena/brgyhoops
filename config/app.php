@@ -69,6 +69,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tournament Status Timezone
+    |--------------------------------------------------------------------------
+    |
+    | The timezone used to decide "today" when a tournament's status is
+    | derived from its start and end dates, so statuses change at local
+    | midnight. The application timezone above is not affected.
+    |
+    */
+
+    'tournament_timezone' => 'Asia/Manila',
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

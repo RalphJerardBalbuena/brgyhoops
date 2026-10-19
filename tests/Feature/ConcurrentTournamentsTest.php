@@ -123,7 +123,9 @@ class ConcurrentTournamentsTest extends TestCase
             ->post(route('admin.tournaments.store'), [
                 'name' => 'Charlie Classic',
                 'type' => 'inter_town',
-                'status' => 'ongoing',
+                // Dates spanning today make the tournament ongoing.
+                'start_date' => Tournament::today()->subWeek()->toDateString(),
+                'end_date' => Tournament::today()->addMonth()->toDateString(),
                 'manager_ids' => [$this->manager->id],
             ])
             ->assertRedirect(route('admin.tournaments.index'));

@@ -20,10 +20,9 @@
 
     @php
         $currentType = old('type', $tournament?->type ?? 'inter_barangay');
-        $currentStatus = old('status', $tournament?->status ?? 'upcoming');
     @endphp
 
-    <div class="field @error('type') has-error @enderror">
+    <div class="field field-full @error('type') has-error @enderror">
         <label for="type"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Tournament type *</label>
         <select id="type" name="type" required>
             <option value="">Select tournament type</option>
@@ -32,16 +31,6 @@
             <option value="inter_town" @selected($currentType === 'inter_town')>Inter-Town</option>
         </select>
         @error('type') <div class="field-error">{{ $message }}</div> @enderror
-    </div>
-
-    <div class="field @error('status') has-error @enderror">
-        <label for="status"><i class="fa-solid fa-signal" aria-hidden="true"></i> Status *</label>
-        <select id="status" name="status" required>
-            <option value="upcoming" @selected($currentStatus === 'upcoming')>Upcoming</option>
-            <option value="ongoing" @selected($currentStatus === 'ongoing')>Ongoing</option>
-            <option value="completed" @selected($currentStatus === 'completed')>Completed</option>
-        </select>
-        @error('status') <div class="field-error">{{ $message }}</div> @enderror
     </div>
 
     @if ($venueSupported ?? false)
@@ -54,14 +43,14 @@
     @endif
 
     <div class="field @error('start_date') has-error @enderror">
-        <label for="start_date"><i class="fa-regular fa-calendar" aria-hidden="true"></i> Start date</label>
-        <input id="start_date" name="start_date" type="date" value="{{ old('start_date', $tournament?->start_date?->format('Y-m-d')) }}">
+        <label for="start_date"><i class="fa-regular fa-calendar" aria-hidden="true"></i> Start date *</label>
+        <input id="start_date" name="start_date" type="date" value="{{ old('start_date', $tournament?->start_date?->format('Y-m-d')) }}" required>
         @error('start_date') <div class="field-error">{{ $message }}</div> @enderror
     </div>
 
     <div class="field @error('end_date') has-error @enderror">
-        <label for="end_date"><i class="fa-regular fa-calendar-check" aria-hidden="true"></i> End date</label>
-        <input id="end_date" name="end_date" type="date" value="{{ old('end_date', $tournament?->end_date?->format('Y-m-d')) }}">
+        <label for="end_date"><i class="fa-regular fa-calendar-check" aria-hidden="true"></i> End date *</label>
+        <input id="end_date" name="end_date" type="date" value="{{ old('end_date', $tournament?->end_date?->format('Y-m-d')) }}" required>
         @error('end_date') <div class="field-error">{{ $message }}</div> @enderror
         <div class="field-hint">The end date cannot be earlier than the start date.</div>
     </div>

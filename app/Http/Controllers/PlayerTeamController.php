@@ -127,8 +127,7 @@ class PlayerTeamController extends Controller
 
         abort_unless($user && $user->role === 'player', 403);
 
-        if (!$team->tournament ||
-            !in_array($team->tournament->status, ['upcoming', 'ongoing'], true)) {
+        if (!$team->tournament || !$team->tournament->isManageable()) {
             return back()->with('error', 'This tournament is not accepting team requests.');
         }
 

@@ -29,6 +29,10 @@ class AdminTournamentEditTest extends TestCase
 
         Notification::fake();
 
+        // Freeze the clock inside the tournament's Nov 1–30 run so its
+        // date-derived status is "ongoing" (noon in Asia/Manila).
+        $this->travelTo('2026-11-10 04:00:00');
+
         $this->admin = User::factory()->create(['role' => 'admin']);
         $this->manager = User::factory()->create(['role' => 'team_manager']);
 
@@ -70,7 +74,6 @@ class AdminTournamentEditTest extends TestCase
             'description' => 'Original description',
             'start_date' => '2026-11-01',
             'end_date' => '2026-11-30',
-            'status' => 'ongoing',
         ], $overrides);
     }
 
@@ -107,7 +110,7 @@ class AdminTournamentEditTest extends TestCase
             ->assertSee('value="2026-11-01"', false)
             ->assertSee('value="2026-11-30"', false)
             ->assertSee('Original description')
-            ->assertSee('<option value="ongoing" selected', false)
+            ->assertDontSee('name="status"', false)
             ->assertSee('<option value="inter_barangay" selected', false)
             ->assertSee($this->manager->name);
     }
@@ -127,7 +130,6 @@ class AdminTournamentEditTest extends TestCase
             'description' => 'New description',
             'start_date' => '2026-12-01',
             'end_date' => '2026-12-20',
-            'status' => 'upcoming',
         ]))
             ->assertRedirect(route('admin.tournaments.index'))
             ->assertSessionHas('success', 'Tournament updated successfully.');
@@ -140,6 +142,7 @@ class AdminTournamentEditTest extends TestCase
         $this->assertSame('New description', $tournament->description);
         $this->assertSame('2026-12-01', $tournament->start_date->format('Y-m-d'));
         $this->assertSame('2026-12-20', $tournament->end_date->format('Y-m-d'));
+        // Moving the dates into the future makes it upcoming again.
         $this->assertSame('upcoming', $tournament->status);
     }
 
@@ -172,7 +175,8 @@ class AdminTournamentEditTest extends TestCase
         $this->actingAs($this->admin)->post(route('admin.tournaments.store'), [
             'name' => 'Typed Cup',
             'type' => 'inter_zone',
-            'status' => 'upcoming',
+            'start_date' => '2026-12-01',
+            'end_date' => '2026-12-20',
         ]);
 
         $this->assertSame('inter_zone', Tournament::where('name', 'Typed Cup')->value('type'));
@@ -238,7 +242,7 @@ class AdminTournamentEditTest extends TestCase
         $cases = [
             'name' => ['name' => ''],
             'type' => ['type' => 'world_cup'],
-            'status' => ['status' => 'paused'],
+            'start_date' => ['start_date' => ''],
             'end_date' => ['start_date' => '2026-12-10', 'end_date' => '2026-12-01'],
             'venue' => ['venue' => str_repeat('v', 256)],
         ];
@@ -333,7 +337,8 @@ class AdminTournamentEditTest extends TestCase
         $this->update($this->payload([
             'name' => 'Unmigrated Rename',
             'venue' => 'Ignored Venue',
-            'status' => 'upcoming',
+            'start_date' => '2026-12-01',
+            'end_date' => '2026-12-20',
         ]))
             ->assertRedirect(route('admin.tournaments.index'))
             ->assertSessionHasNoErrors();
