@@ -187,6 +187,22 @@ class TournamentCreationWithoutAssignmentTest extends TestCase
         $this->assertDatabaseMissing('tournament_user', ['user_id' => $rejected->id]);
     }
 
+    public function test_overlap_rule_still_blocks_approval_for_a_new_tournament(): void
+    {
+        $current = Tournament::create($this->payload(['name' => 'Current League', 'start_date' => '2026-10-25', 'end_date' => '2026-11-15']));
+        $current->users()->attach($this->manager->id);
+
+        $this->actingAs($this->admin)->post(route('admin.tournaments.store'), $this->payload());
+        $tournament = Tournament::where('name', 'Open Season Cup')->firstOrFail();
+
+        $this->actingAs($this->manager)
+            ->post(route('manager.open-tournaments.apply', $tournament))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseCount('tournament_applications', 0);
+        $this->assertDatabaseMissing('tournament_user', ['tournament_id' => $tournament->id]);
+    }
+
     public function test_manager_empty_state_points_to_applications_not_the_administrator(): void
     {
         $this->actingAs($this->manager)

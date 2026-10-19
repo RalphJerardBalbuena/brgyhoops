@@ -17,6 +17,21 @@ class Team extends Model
         'description',
     ];
 
+    /**
+     * eliminated_at is set only by the admin elimination action (not fillable).
+     */
+    protected $casts = [
+        'eliminated_at' => 'datetime',
+    ];
+
+    /**
+     * Whether an admin officially eliminated the team from its tournament.
+     */
+    public function isEliminated(): bool
+    {
+        return $this->eliminated_at !== null;
+    }
+
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);

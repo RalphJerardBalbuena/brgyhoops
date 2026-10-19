@@ -121,6 +121,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::delete('/games/{game}', [GameController::class, 'destroy'])
         ->name('games.destroy');
+
+    // Official elimination (releases the manager from the overlap rule)
+    Route::patch('/standings/teams/{team}/eliminate', [StandingController::class, 'eliminate'])
+        ->name('standings.teams.eliminate');
 });
 
 /*

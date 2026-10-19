@@ -84,6 +84,26 @@
 
                                     <td class="team-name">
                                         {{ $standing['team']->name }}
+
+                                        @if ($standing['team']->isEliminated())
+                                            <span class="badge badge-cancelled">Eliminated</span>
+                                        @elseif (auth()->user()->role === 'admin'
+                                            && $activeTournament->status === 'ongoing'
+                                            && $standing['team']->application_status === 'approved')
+                                            <form method="POST"
+                                                  action="{{ route('standings.teams.eliminate', $standing['team']) }}"
+                                                  class="inline-form"
+                                                  data-confirm="Mark {{ $standing['team']->name }} as officially eliminated? This cannot be undone here."
+                                                  data-confirm-title="Eliminate this team?"
+                                                  data-confirm-action="Mark eliminated"
+                                                  data-confirm-variant="danger">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="button button-light button-sm" data-loading-text="Saving…">
+                                                    Mark eliminated
+                                                </button>
+                                            </form>
+                                        @endif
                                     </td>
 
                                     <td class="num">

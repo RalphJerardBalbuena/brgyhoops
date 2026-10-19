@@ -12,8 +12,15 @@ use Illuminate\Support\Facades\DB;
  * Manager tournament applications: submission, approval and rejection.
  *
  * Eligibility is rechecked inside each transaction. The *Problems() methods
- * return reasons an action is not allowed (empty when it is), so later rules
- * (e.g. S3.11 scheduling conflicts) can be added in one place.
+ * return reasons an action is not allowed (empty when it is).
+ *
+ * Scheduling rule (S3.11): a manager may not take part in two tournaments
+ * whose dates overlap (inclusive) while still active in one of them. A
+ * manager is released from a tournament once all of their approved teams
+ * there have been officially eliminated (teams.eliminated_at). Only
+ * participation (a tournament_user row) counts; pending applications do not,
+ * but every approval rechecks the rule. Submit and approve lock the manager's
+ * user row so concurrent requests for the same manager run one at a time.
  *
  * Workspace access is granted only by approve(), which adds the
  * tournament_user row in the same transaction as the status change.
@@ -45,7 +52,89 @@ class TournamentApplications
             return [self::DUPLICATE];
         }
 
+        if ($conflicts = self::conflictingTournaments($manager, $tournament)) {
+            $overlap = self::hasDates($tournament)
+                ? ', which overlaps these dates. '
+                : '. This tournament has no dates set yet, so it may overlap. ';
+
+            return [
+                'You are still taking part in ' . self::names($conflicts) . $overlap
+                . 'You can apply once your team has been eliminated there or that tournament has ended.',
+            ];
+        }
+
         return [];
+    }
+
+    /**
+     * Tournaments the manager still actively takes part in whose dates overlap
+     * the given tournament's (both ranges inclusive, so a shared start/end day
+     * counts). Other tournaments without dates cannot be compared and do not
+     * conflict with a dated one.
+     *
+     * When the given tournament itself has no dates (a legacy record), an
+     * overlap cannot be ruled out, so every participation that has not ended
+     * (upcoming or ongoing) counts as a conflict. No dates are assumed.
+     *
+     * @return array<int, Tournament>
+     */
+    public static function conflictingTournaments(User $manager, Tournament $tournament): array
+    {
+        $query = $manager->tournaments()->where('tournaments.id', '!=', $tournament->id);
+
+        if (self::hasDates($tournament)) {
+            $query->whereNotNull('tournaments.start_date')
+                ->whereNotNull('tournaments.end_date')
+                ->whereDate('tournaments.start_date', '<=', $tournament->end_date->toDateString())
+                ->whereDate('tournaments.end_date', '>=', $tournament->start_date->toDateString());
+        } else {
+            $query->manageable();
+        }
+
+        return $query
+            ->orderBy('tournaments.start_date')
+            ->get()
+            ->reject(fn (Tournament $other) => self::isReleasedFrom($manager, $other))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Whether the manager is released from a tournament they are assigned to:
+     * they have approved teams there and every one has been eliminated.
+     * Assigned without an approved team still counts as taking part.
+     */
+    public static function isReleasedFrom(User $manager, Tournament $tournament): bool
+    {
+        $teams = $tournament->teams()
+            ->where('user_id', $manager->id)
+            ->where('application_status', 'approved')
+            ->get();
+
+        return $teams->isNotEmpty() && $teams->every(fn ($team) => $team->isEliminated());
+    }
+
+    private static function hasDates(Tournament $tournament): bool
+    {
+        return $tournament->start_date !== null && $tournament->end_date !== null;
+    }
+
+    /**
+     * @param  array<int, Tournament>  $tournaments
+     */
+    private static function names(array $tournaments): string
+    {
+        return collect($tournaments)->pluck('name')->join(', ', ' and ');
+    }
+
+    /**
+     * Lock the manager's user row so concurrent submissions and approvals for
+     * the same manager are serialized (a no-op on SQLite, which serializes
+     * writes itself).
+     */
+    private static function lockManager(int $managerId): ?User
+    {
+        return User::whereKey($managerId)->lockForUpdate()->first();
     }
 
     /**
@@ -57,6 +146,7 @@ class TournamentApplications
     {
         try {
             return DB::transaction(function () use ($manager, $tournament) {
+                $manager = self::lockManager($manager->id) ?? $manager;
                 $tournament = Tournament::whereKey($tournament->id)->lockForUpdate()->first();
 
                 if (!$tournament) {
@@ -96,6 +186,17 @@ class TournamentApplications
             return ['This tournament has already started, so the application can no longer be approved. Reject it instead.'];
         }
 
+        if ($conflicts = self::conflictingTournaments($application->manager, $application->tournament)) {
+            $overlap = self::hasDates($application->tournament)
+                ? ', which overlaps this tournament. '
+                : '. This tournament has no dates set yet, so it may overlap. ';
+
+            return [
+                "{$application->manager->name} is still taking part in " . self::names($conflicts) . $overlap
+                . 'Approve only after their team has been eliminated there, or reject the application.',
+            ];
+        }
+
         return [];
     }
 
@@ -108,6 +209,9 @@ class TournamentApplications
     public static function approve(TournamentApplication $application): array
     {
         return DB::transaction(function () use ($application) {
+            // Lock the manager first (same order as submit()), then the application.
+            self::lockManager($application->user_id);
+
             $locked = TournamentApplication::with(['tournament', 'manager'])
                 ->whereKey($application->id)
                 ->lockForUpdate()

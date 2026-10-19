@@ -515,7 +515,8 @@ class TournamentApplicationTest extends TestCase
 
     public function test_tournament_applications_are_separate_from_team_applications(): void
     {
-        $assigned = $this->tournament('Running League', '2026-10-25', '2026-11-30');
+        // Ends before Open Cup starts, so the S3.11 overlap rule does not apply.
+        $assigned = $this->tournament('Running League', '2026-10-25', '2026-11-05');
         $assigned->users()->attach($this->manager->id);
         $team = Team::create(['tournament_id' => $assigned->id, 'user_id' => $this->manager->id, 'name' => 'Roster Five']);
         $team->forceFill(['application_status' => 'pending', 'applied_at' => now()])->save();
