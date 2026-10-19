@@ -39,8 +39,9 @@ class AdminTournamentApplicationController extends Controller
                 CASE
                     WHEN status = 'pending' THEN 0
                     WHEN status = 'rejected' THEN 1
-                    WHEN status = 'approved' THEN 2
-                    ELSE 3
+                    WHEN status = 'conflict' THEN 2
+                    WHEN status = 'approved' THEN 3
+                    ELSE 4
                 END
             ")
             ->orderByDesc('created_at')

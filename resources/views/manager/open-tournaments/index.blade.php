@@ -62,7 +62,7 @@
                                         <span class="badge badge-dark">Assigned</span>
                                     @endif
                                     @if ($application)
-                                        <span class="badge badge-{{ $application->status }}">Application {{ $application->status }}</span>
+                                        <span class="badge badge-{{ $application->badgeClass() }}">{{ $application->status === 'conflict' ? 'Schedule conflict' : 'Application ' . $application->status }}</span>
                                     @endif
                                     <x-status-badge :status="$tournament->status" />
                                 </div>

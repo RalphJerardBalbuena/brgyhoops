@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tournament;
+use App\Support\TournamentApplications;
 use Illuminate\View\View;
 
 /**
@@ -53,7 +54,13 @@ class ManagerOpenTournamentController extends Controller
             ->where('tournament_id', $tournament->id)
             ->first();
 
-        return view('manager.open-tournaments.show', compact('tournament', 'isAssigned', 'application'));
+        // Whether a conflict-closed application could be resubmitted now. Only
+        // decides what the page offers; submitting rechecks everything.
+        $reapplyProblems = $application?->status === 'conflict'
+            ? TournamentApplications::submissionProblems(auth()->user(), $tournament)
+            : [];
+
+        return view('manager.open-tournaments.show', compact('tournament', 'isAssigned', 'application', 'reapplyProblems'));
     }
 
     /**

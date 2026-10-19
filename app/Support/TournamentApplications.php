@@ -22,6 +22,12 @@ use Illuminate\Support\Facades\DB;
  * but every approval rechecks the rule. Submit and approve lock the manager's
  * user row so concurrent requests for the same manager run one at a time.
  *
+ * A manager may have only one pending application at a time. When one is
+ * approved, the manager's other pending applications that now overlap it
+ * are closed with status "conflict" (kept, not deleted). A conflict-closed
+ * application can be resubmitted once the manager is eligible again (e.g.
+ * after elimination); rejected applications stay final.
+ *
  * Workspace access is granted only by approve(), which adds the
  * tournament_user row in the same transaction as the status change.
  */
@@ -48,17 +54,30 @@ class TournamentApplications
             return ['You are already assigned to this tournament.'];
         }
 
-        if ($tournament->applications()->where('user_id', $manager->id)->exists()) {
+        // One application per manager and tournament; only a conflict-closed
+        // one may be resubmitted.
+        $existing = $tournament->applications()->where('user_id', $manager->id)->first();
+
+        if ($existing && $existing->status !== 'conflict') {
             return [self::DUPLICATE];
         }
 
-        if ($conflicts = self::conflictingTournaments($manager, $tournament)) {
-            $overlap = self::hasDates($tournament)
-                ? ', which overlaps these dates. '
-                : '. This tournament has no dates set yet, so it may overlap. ';
+        $pending = $manager->tournamentApplications()
+            ->where('status', 'pending')
+            ->with('tournament')
+            ->first();
 
+        if ($pending) {
             return [
-                'You are still taking part in ' . self::names($conflicts) . $overlap
+                'You already have a pending application for ' . ($pending->tournament?->name ?? 'another tournament') . '. '
+                . 'You can apply to another tournament once an administrator has reviewed it.',
+            ];
+        }
+
+        if ($conflicts = self::conflictingTournaments($manager, $tournament)) {
+            return [
+                'You are still taking part in ' . self::names($conflicts)
+                . self::overlapReason($conflicts, $tournament, ', which overlaps these dates. ')
                 . 'You can apply once your team has been eliminated there or that tournament has ended.',
             ];
         }
@@ -67,14 +86,13 @@ class TournamentApplications
     }
 
     /**
-     * Tournaments the manager still actively takes part in whose dates overlap
-     * the given tournament's (both ranges inclusive, so a shared start/end day
-     * counts). Other tournaments without dates cannot be compared and do not
-     * conflict with a dated one.
+     * Tournaments the manager still actively takes part in that overlap the
+     * given tournament. Dated ranges are compared inclusively (a shared
+     * start/end day counts).
      *
-     * When the given tournament itself has no dates (a legacy record), an
-     * overlap cannot be ruled out, so every participation that has not ended
-     * (upcoming or ongoing) counts as a conflict. No dates are assumed.
+     * Where either side has no dates (a legacy record), an overlap cannot be
+     * ruled out, so participation that has not ended (upcoming or ongoing)
+     * counts as a conflict. No dates are assumed or written.
      *
      * @return array<int, Tournament>
      */
@@ -83,10 +101,17 @@ class TournamentApplications
         $query = $manager->tournaments()->where('tournaments.id', '!=', $tournament->id);
 
         if (self::hasDates($tournament)) {
-            $query->whereNotNull('tournaments.start_date')
-                ->whereNotNull('tournaments.end_date')
-                ->whereDate('tournaments.start_date', '<=', $tournament->end_date->toDateString())
-                ->whereDate('tournaments.end_date', '>=', $tournament->start_date->toDateString());
+            $query->where(function ($query) use ($tournament) {
+                $query->where(function ($dated) use ($tournament) {
+                    $dated->whereNotNull('tournaments.start_date')
+                        ->whereNotNull('tournaments.end_date')
+                        ->whereDate('tournaments.start_date', '<=', $tournament->end_date->toDateString())
+                        ->whereDate('tournaments.end_date', '>=', $tournament->start_date->toDateString());
+                })->orWhere(function ($undated) {
+                    $undated->where(fn ($missing) => $missing->whereNull('tournaments.start_date')->orWhereNull('tournaments.end_date'))
+                        ->whereIn('tournaments.status', Tournament::MANAGEABLE_STATUSES);
+                });
+            });
         } else {
             $query->manageable();
         }
@@ -117,6 +142,28 @@ class TournamentApplications
     private static function hasDates(Tournament $tournament): bool
     {
         return $tournament->start_date !== null && $tournament->end_date !== null;
+    }
+
+    /**
+     * Why the conflicting tournaments block the given one: a real date overlap,
+     * or missing dates on either side (an overlap cannot be ruled out).
+     *
+     * @param  array<int, Tournament>  $conflicts
+     */
+    private static function overlapReason(array $conflicts, Tournament $tournament, string $datedOverlap): string
+    {
+        if (!self::hasDates($tournament)) {
+            return '. This tournament has no dates set yet, so it may overlap. ';
+        }
+
+        $undated = array_values(array_filter($conflicts, fn (Tournament $other) => !self::hasDates($other)));
+
+        if ($undated === []) {
+            return $datedOverlap;
+        }
+
+        return '. ' . self::names($undated) . (count($undated) === 1 ? ' has' : ' have')
+            . ' no dates set, so an overlap cannot be ruled out. ';
     }
 
     /**
@@ -157,6 +204,25 @@ class TournamentApplications
                     return $problems;
                 }
 
+                $existing = $tournament->applications()->where('user_id', $manager->id)->first();
+
+                if ($existing) {
+                    // Reopen the conflict-closed application (same row, so the
+                    // one-per-tournament rule still holds).
+                    $now = now();
+                    $reopened = TournamentApplication::whereKey($existing->id)
+                        ->where('status', 'conflict')
+                        ->update([
+                            'status' => 'pending',
+                            'admin_review_note' => null,
+                            'reviewed_at' => null,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+
+                    return $reopened === 1 ? [] : [self::DUPLICATE];
+                }
+
                 $tournament->applications()->create(['user_id' => $manager->id]);
 
                 return [];
@@ -187,12 +253,9 @@ class TournamentApplications
         }
 
         if ($conflicts = self::conflictingTournaments($application->manager, $application->tournament)) {
-            $overlap = self::hasDates($application->tournament)
-                ? ', which overlaps this tournament. '
-                : '. This tournament has no dates set yet, so it may overlap. ';
-
             return [
-                "{$application->manager->name} is still taking part in " . self::names($conflicts) . $overlap
+                "{$application->manager->name} is still taking part in " . self::names($conflicts)
+                . self::overlapReason($conflicts, $application->tournament, ', which overlaps this tournament. ')
                 . 'Approve only after their team has been eliminated there, or reject the application.',
             ];
         }
@@ -231,8 +294,40 @@ class TournamentApplications
 
             $locked->tournament->users()->syncWithoutDetaching([$locked->user_id]);
 
+            self::closeOverlappingPending($locked);
+
             return [];
         });
+    }
+
+    /**
+     * After an approval, close the manager's other pending applications that
+     * the overlap rule now blocks (status "conflict", with a note). Runs inside
+     * the approval transaction; each is closed only if still pending.
+     */
+    private static function closeOverlappingPending(TournamentApplication $approved): void
+    {
+        $others = TournamentApplication::with('tournament')
+            ->where('user_id', $approved->user_id)
+            ->where('status', 'pending')
+            ->whereKeyNot($approved->id)
+            ->get();
+
+        foreach ($others as $other) {
+            if (!$other->tournament) {
+                continue;
+            }
+
+            $conflictIds = collect(self::conflictingTournaments($approved->manager, $other->tournament))->pluck('id');
+
+            if ($conflictIds->contains($approved->tournament_id)) {
+                self::markReviewed(
+                    $other,
+                    'conflict',
+                    "Closed automatically: it overlaps {$approved->tournament->name}, which was approved for this manager."
+                );
+            }
+        }
     }
 
     /**

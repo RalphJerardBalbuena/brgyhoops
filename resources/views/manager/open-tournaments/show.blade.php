@@ -21,7 +21,7 @@
             @endif
 
             @if ($application)
-                <span class="badge badge-{{ $application->status }}">Application {{ $application->status }}</span>
+                <span class="badge badge-{{ $application->badgeClass() }}">{{ $application->status === 'conflict' ? 'Schedule conflict' : 'Application ' . $application->status }}</span>
             @endif
         </x-slot:meta>
 
@@ -121,6 +121,42 @@
                         @if ($application->admin_review_note)
                             <div class="note">
                                 Reason: {{ $application->admin_review_note }}
+                            </div>
+                        @endif
+                    @elseif ($application?->status === 'conflict')
+                        <h2 class="card-title">Application closed: schedule conflict</h2>
+
+                        <p class="card-text">
+                            This application was closed because another tournament you applied to, with
+                            overlapping dates, was approved. You can apply again if you become eligible,
+                            for example once your team has been eliminated from that tournament.
+                        </p>
+
+                        @if ($application->admin_review_note)
+                            <div class="note">
+                                Reason: {{ $application->admin_review_note }}
+                            </div>
+                        @endif
+
+                        @if ($reapplyProblems === [])
+                            <p class="card-text" style="margin-top: 12px;">
+                                You are eligible again, so you can resubmit this application. It still needs
+                                an administrator's approval.
+                            </p>
+
+                            <div class="card-footer">
+                                <form method="POST" action="{{ route('manager.open-tournaments.apply', $tournament) }}" class="inline-form">
+                                    @csrf
+                                    <button type="submit" class="button button-primary" data-loading-text="Submitting…">
+                                        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                                        Apply again
+                                    </button>
+                                </form>
+                            </div>
+                        @else
+                            <div class="note" style="border-left-color: var(--amber);">
+                                <strong>You cannot apply again yet.</strong>
+                                {{ implode(' ', $reapplyProblems) }}
                             </div>
                         @endif
                     @else
