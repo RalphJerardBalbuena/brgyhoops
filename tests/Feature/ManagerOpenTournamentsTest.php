@@ -102,10 +102,11 @@ class ManagerOpenTournamentsTest extends TestCase
             ->assertSee('San Isidro Covered Court, Quezon City')
             ->assertSee('Prize Pool')
             ->assertSee('₱50,000.00')
+            ->assertDontSee('Not announced')
             ->assertSee('href="' . route('manager.open-tournaments.show', $tournament) . '"', false);
     }
 
-    public function test_listing_hides_empty_venue_and_prize_pool(): void
+    public function test_listing_hides_empty_venue_and_shows_prize_pool_fallback(): void
     {
         $this->open('Bare Cup', ['venue' => null, 'prize_pool' => null]);
 
@@ -114,7 +115,7 @@ class ManagerOpenTournamentsTest extends TestCase
             ->assertOk()
             ->assertSee('Bare Cup')
             ->assertDontSee('Venue:')
-            ->assertDontSee('Prize Pool')
+            ->assertSeeInOrder(['Prize Pool', 'Not announced'])
             ->assertDontSee('₱');
     }
 
@@ -153,6 +154,7 @@ class ManagerOpenTournamentsTest extends TestCase
             ->assertSee('Nov 20, 2026')
             ->assertSee('Marikina Sports Center')
             ->assertSee('₱125,000.50')
+            ->assertDontSee('Not announced')
             ->assertSee('Rules and registration notes.')
             ->assertSee('Request to participate')
             ->assertSee('action="' . route('manager.open-tournaments.apply', $tournament) . '"', false)
@@ -162,14 +164,15 @@ class ManagerOpenTournamentsTest extends TestCase
             ->assertDontSee('<span class="badge badge-dark">Assigned</span>', false);
     }
 
-    public function test_details_hide_empty_venue_and_prize_pool(): void
+    public function test_details_hide_empty_venue_and_show_prize_pool_fallback(): void
     {
         $tournament = $this->open('Bare Detail Cup');
 
         $this->actingAs($this->manager)
             ->get(route('manager.open-tournaments.show', $tournament))
             ->assertOk()
-            ->assertDontSee('Prize Pool')
+            ->assertSeeInOrder(['Prize Pool', 'Not announced'])
+            ->assertDontSee('₱')
             ->assertDontSee('>Venue<', false)
             ->assertDontSee('venue-map', false);
     }

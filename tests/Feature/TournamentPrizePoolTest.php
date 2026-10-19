@@ -127,6 +127,36 @@ class TournamentPrizePoolTest extends TestCase
         $this->assertSame('₱9,999,999,999.99', Tournament::where('name', 'Max Cup')->firstOrFail()->formattedPrizePool());
     }
 
+    public function test_existing_tournaments_without_a_prize_pool_show_a_fallback_to_managers(): void
+    {
+        $manager = User::factory()->create(['role' => 'team_manager']);
+        $legacy = Tournament::create($this->payload(['name' => 'Legacy Cup']));
+        $zero = Tournament::create($this->payload(['name' => 'Zero Cup', 'prize_pool' => '0']));
+
+        $this->assertNull($legacy->formattedPrizePool());
+
+        $this->actingAs($manager)
+            ->get(route('manager.open-tournaments.show', $legacy))
+            ->assertOk()
+            ->assertSeeInOrder(['Prize Pool', 'Not announced']);
+
+        // An announced amount of zero is shown as an amount, not the fallback.
+        $this->actingAs($manager)
+            ->get(route('manager.open-tournaments.show', $zero))
+            ->assertOk()
+            ->assertSee('₱0.00')
+            ->assertDontSee('Not announced');
+
+        // Setting an amount later replaces the fallback.
+        $this->update($legacy, $this->payload(['name' => 'Legacy Cup', 'prize_pool' => '20000']))
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($manager)
+            ->get(route('manager.open-tournaments.show', $legacy))
+            ->assertSee('₱20,000.00')
+            ->assertDontSee('Not announced');
+    }
+
     public function test_editing_changes_clears_or_preserves_the_prize_pool(): void
     {
         $tournament = Tournament::create($this->payload(['prize_pool' => '50000']));
@@ -196,16 +226,18 @@ class TournamentPrizePoolTest extends TestCase
         $this->assertNull($created->formattedPrizePool());
         $this->assertSame('Before Cup Renamed', $tournament->fresh()->name);
 
-        // Managers can still browse open tournaments, without a prize pool shown.
+        // Managers can still browse open tournaments; the prize pool shows the fallback.
         $this->actingAs($manager)
             ->get(route('manager.open-tournaments.index'))
             ->assertOk()
             ->assertSee('Unmigrated Cup')
-            ->assertDontSee('Prize Pool');
+            ->assertSeeInOrder(['Prize Pool', 'Not announced'])
+            ->assertDontSee('₱');
 
         $this->actingAs($manager)
             ->get(route('manager.open-tournaments.show', $created))
             ->assertOk()
-            ->assertDontSee('Prize Pool');
+            ->assertSeeInOrder(['Prize Pool', 'Not announced'])
+            ->assertDontSee('₱');
     }
 }

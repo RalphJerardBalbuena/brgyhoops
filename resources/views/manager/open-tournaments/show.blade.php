@@ -59,12 +59,10 @@
                             </div>
                         </div>
 
-                        @if ($prizePool)
-                            <div>
-                                <div class="detail-label">Prize Pool</div>
-                                <div class="detail-value">{{ $prizePool }}</div>
-                            </div>
-                        @endif
+                        <div>
+                            <div class="detail-label">Prize Pool</div>
+                            <div class="detail-value">{{ $prizePool ?? 'Not announced' }}</div>
+                        </div>
 
                         @if (filled($tournament->venue))
                             <div>
