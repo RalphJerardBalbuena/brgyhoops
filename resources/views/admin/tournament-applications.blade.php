@@ -76,8 +76,8 @@
                                     <div class="card-subtitle">{{ $application->manager?->email }}</div>
                                 </div>
 
-                                <span class="badge badge-{{ $application->status }}">
-                                    {{ ucfirst($application->status) }}
+                                <span class="badge badge-{{ $application->badgeClass() }}">
+                                    {{ $application->statusLabel() }}
                                 </span>
                             </div>
 

@@ -147,8 +147,8 @@ class TournamentParticipationRulesTest extends TestCase
         $this->participating('Day Before League', '2026-11-02', '2026-11-09');
         $this->participating('Day After League', '2026-11-21', '2026-11-30');
         $this->participating('Finished League', '2026-10-01', '2026-10-10');
-        // Legacy tournaments without dates cannot be compared and never conflict.
-        Tournament::create(['name' => 'Undated League', 'status' => 'ongoing'])->users()->attach($this->manager->id);
+        // A legacy tournament without dates no longer blocks once it is completed.
+        Tournament::create(['name' => 'Undated Finished', 'status' => 'completed'])->users()->attach($this->manager->id);
 
         $this->apply()->assertSessionHas('success');
         $this->approve($this->application())->assertSessionHas('success');
@@ -188,22 +188,21 @@ class TournamentParticipationRulesTest extends TestCase
     {
         $overlapping = $this->tournament('Overlapping Cup', '2026-11-15', '2026-11-25');
 
-        // Pending applications are not participation, so both can be submitted...
+        // Only one pending application at a time: the second submission is refused.
         $this->apply()->assertSessionHas('success');
-        $this->apply($overlapping)->assertSessionHas('success');
+        $this->apply($overlapping)->assertSessionHas('error');
+        $this->assertDatabaseCount('tournament_applications', 1);
 
-        // ...but once one is approved, the other cannot be.
+        // A pending application from before that rule (legacy data) cannot be
+        // approved alongside: approving the first closes it as a conflict.
+        $overlapping->applications()->create(['user_id' => $this->manager->id]);
+
         $this->approve($this->application())->assertSessionHas('success');
 
+        $this->assertSame('conflict', $this->application($overlapping)->status);
         $this->approve($this->application($overlapping))
-            ->assertSessionHas('error', "{$this->manager->name} is still taking part in Target Cup, which overlaps this tournament. Approve only after their team has been eliminated there, or reject the application.");
-
-        $this->assertSame('pending', $this->application($overlapping)->status);
+            ->assertSessionHas('error', 'This application has already been reviewed.');
         $this->assertHasAccess($overlapping, false);
-
-        $this->actingAs($this->admin)
-            ->patch(route('admin.tournament-applications.reject', $this->application($overlapping)))
-            ->assertSessionHas('success');
     }
 
     public function test_approval_rechecks_dates_changed_after_submission(): void
@@ -251,6 +250,105 @@ class TournamentParticipationRulesTest extends TestCase
             ->assertSee('is still taking part in New League')
             ->assertDontSee('action="' . route('admin.tournament-applications.approve', $application) . '"', false)
             ->assertSee('action="' . route('admin.tournament-applications.reject', $application) . '"', false);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Undated (legacy) participation with a dated target
+    |--------------------------------------------------------------------------
+    */
+
+    private function undatedParticipation(string $name, string $status, ?User $manager = null): Tournament
+    {
+        // A legacy record: no dates, so its stored status applies. No dates are assumed.
+        $tournament = Tournament::create(['name' => $name, 'type' => 'inter_barangay', 'status' => $status]);
+        $tournament->users()->attach(($manager ?? $this->manager)->id);
+
+        return $tournament;
+    }
+
+    public function test_active_undated_participation_blocks_submission_for_a_dated_target(): void
+    {
+        $this->undatedParticipation('Legacy Running', 'ongoing');
+
+        $this->apply()
+            ->assertSessionHas('error', 'You are still taking part in Legacy Running. Legacy Running has no dates set, so an overlap cannot be ruled out. You can apply once your team has been eliminated there or that tournament has ended.');
+
+        // Upcoming undated participation also counts.
+        $planner = User::factory()->create(['role' => 'team_manager']);
+        $this->undatedParticipation('Legacy Planned', 'upcoming', $planner);
+        $this->apply(null, $planner)->assertSessionHas('error');
+
+        // Mixed with a real dated overlap, both are named and the undated one explained.
+        $both = User::factory()->create(['role' => 'team_manager']);
+        $this->participating('Current League', '2026-10-25', '2026-11-15', $both);
+        $this->undatedParticipation('Legacy Side League', 'ongoing', $both);
+        $this->apply(null, $both)->assertSessionHas('error');
+        $error = session('error');
+        $this->assertStringContainsString('Current League', $error);
+        $this->assertStringContainsString('Legacy Side League has no dates set, so an overlap cannot be ruled out.', $error);
+
+        $this->assertDatabaseCount('tournament_applications', 0);
+        $this->assertHasAccess($this->target, false);
+
+        // The legacy records were not given dates.
+        $this->assertNull(Tournament::where('name', 'Legacy Running')->value('start_date'));
+        $this->assertNull(Tournament::where('name', 'Legacy Running')->value('end_date'));
+    }
+
+    public function test_active_undated_participation_blocks_approval_for_a_dated_target(): void
+    {
+        $this->apply()->assertSessionHas('success');
+
+        // Gains undated participation after applying (e.g. a legacy assignment).
+        $this->undatedParticipation('Legacy Planned', 'upcoming');
+
+        $this->approve($this->application())
+            ->assertSessionHas('error', "{$this->manager->name} is still taking part in Legacy Planned. Legacy Planned has no dates set, so an overlap cannot be ruled out. Approve only after their team has been eliminated there, or reject the application.");
+
+        $this->assertSame('pending', $this->application()->status);
+        $this->assertHasAccess($this->target, false);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.tournament-applications.index'))
+            ->assertSee('Legacy Planned has no dates set, so an overlap cannot be ruled out.')
+            ->assertDontSee('action="' . route('admin.tournament-applications.approve', $this->application()) . '"', false);
+    }
+
+    public function test_completed_or_released_undated_participation_does_not_block(): void
+    {
+        // Completed: does not block.
+        $this->undatedParticipation('Legacy Finished', 'completed');
+        $this->apply()->assertSessionHas('success');
+        $this->approve($this->application())->assertSessionHas('success');
+        $this->assertHasAccess($this->target, true);
+
+        // Released by official elimination of the manager's only approved team.
+        $released = User::factory()->create(['role' => 'team_manager']);
+        $legacy = $this->undatedParticipation('Legacy Running', 'ongoing', $released);
+        $team = $this->team($legacy, 'approved', $released);
+
+        $this->apply(null, $released)->assertSessionHas('error');
+
+        $this->eliminate($team)->assertSessionHas('success');
+        $this->assertNull($legacy->fresh()->start_date);
+
+        $this->apply(null, $released)->assertSessionHas('success');
+        $this->approve($this->application(null, $released))->assertSessionHas('success');
+        $this->assertHasAccess($this->target, true, $released);
+    }
+
+    public function test_approving_an_undated_tournament_closes_an_overlapping_dated_pending_application(): void
+    {
+        $legacyOpen = Tournament::create(['name' => 'Legacy Open', 'type' => 'inter_barangay', 'status' => 'upcoming']);
+        $legacyApp = $legacyOpen->applications()->create(['user_id' => $this->manager->id]);
+        $datedApp = $this->target->applications()->create(['user_id' => $this->manager->id]); // pre-rule legacy data
+
+        $this->approve($legacyApp)->assertSessionHas('success');
+
+        // The undated participation may overlap Target Cup, so that pending application is closed.
+        $this->assertSame('conflict', $datedApp->fresh()->status);
+        $this->assertHasAccess($this->target, false);
     }
 
     /*
