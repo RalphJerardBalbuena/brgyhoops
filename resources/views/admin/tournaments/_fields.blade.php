@@ -1,6 +1,6 @@
 {{--
     Shared tournament detail fields for the admin create and edit forms.
-    Expects: $venueSupported (bool), $prizePoolSupported (bool), and optionally $tournament (edit) — null when creating.
+    Expects: $venueSupported (bool), $prizePoolSupported (bool), $formatsSupported (bool), and optionally $tournament (edit) — null when creating.
 --}}
 @php
     $tournament = $tournament ?? null;
@@ -32,6 +32,36 @@
         </select>
         @error('type') <div class="field-error">{{ $message }}</div> @enderror
     </div>
+
+    @if ($formatsSupported ?? false)
+    @php
+        // Existing tournaments may have no format yet: nothing is preselected then.
+        $currentTournamentFormat = old('tournament_format', $tournament?->tournament_format);
+        $currentFinalsFormat = old('finals_format', $tournament?->finals_format);
+    @endphp
+
+    <div class="field @error('tournament_format') has-error @enderror">
+        <label for="tournament_format"><i class="fa-solid fa-sitemap" aria-hidden="true"></i> Tournament format *</label>
+        <select id="tournament_format" name="tournament_format" required>
+            <option value="">Select tournament format</option>
+            @foreach (\App\Models\Tournament::TOURNAMENT_FORMATS as $value => $label)
+                <option value="{{ $value }}" @selected($currentTournamentFormat === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
+        @error('tournament_format') <div class="field-error">{{ $message }}</div> @enderror
+    </div>
+
+    <div class="field @error('finals_format') has-error @enderror">
+        <label for="finals_format"><i class="fa-solid fa-medal" aria-hidden="true"></i> Finals format *</label>
+        <select id="finals_format" name="finals_format" required>
+            <option value="">Select finals format</option>
+            @foreach (\App\Models\Tournament::FINALS_FORMATS as $value => $label)
+                <option value="{{ $value }}" @selected($currentFinalsFormat === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
+        @error('finals_format') <div class="field-error">{{ $message }}</div> @enderror
+    </div>
+    @endif
 
     @if ($venueSupported ?? false)
     <div class="field field-full @error('venue') has-error @enderror">

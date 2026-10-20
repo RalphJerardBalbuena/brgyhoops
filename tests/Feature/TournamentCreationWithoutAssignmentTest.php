@@ -40,6 +40,7 @@ class TournamentCreationWithoutAssignmentTest extends TestCase
         return array_merge([
             'name' => 'Open Season Cup',
             'type' => 'inter_barangay',
+            ...$this->formatFields(),
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-20',
         ], $overrides);

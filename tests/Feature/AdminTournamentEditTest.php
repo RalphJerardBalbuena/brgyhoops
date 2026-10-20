@@ -70,6 +70,7 @@ class AdminTournamentEditTest extends TestCase
         return array_merge([
             'name' => 'Original Cup',
             'type' => 'inter_barangay',
+            ...$this->formatFields(),
             'venue' => 'Original Court, Quezon City',
             'description' => 'Original description',
             'start_date' => '2026-11-01',
@@ -177,6 +178,7 @@ class AdminTournamentEditTest extends TestCase
         $this->actingAs($this->admin)->post(route('admin.tournaments.store'), [
             'name' => 'Typed Cup',
             'type' => 'inter_zone',
+            ...$this->formatFields(),
             'start_date' => '2026-12-01',
             'end_date' => '2026-12-20',
         ]);

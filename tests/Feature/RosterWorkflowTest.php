@@ -50,6 +50,7 @@ class RosterWorkflowTest extends TestCase
         $this->actingAs($this->admin)->post(route('admin.tournaments.store'), [
             'name' => $name,
             'type' => 'inter_barangay',
+            ...$this->formatFields(),
             // Dates spanning today make the tournament ongoing.
             'start_date' => Tournament::today()->subWeek()->toDateString(),
             'end_date' => Tournament::today()->addMonth()->toDateString(),

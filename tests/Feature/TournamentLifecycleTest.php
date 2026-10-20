@@ -188,6 +188,7 @@ class TournamentLifecycleTest extends TestCase
                 ->post(route('admin.tournaments.store'), [
                     'name' => $name,
                     'type' => 'inter_barangay',
+                    ...$this->formatFields(),
                     'start_date' => $start,
                     'end_date' => $end,
                     'status' => $expected === 'completed' ? 'upcoming' : 'completed',
@@ -206,6 +207,7 @@ class TournamentLifecycleTest extends TestCase
             ->post(route('admin.tournaments.store'), [
                 'name' => 'Dateless Cup',
                 'type' => 'inter_barangay',
+                ...$this->formatFields(),
                 'status' => 'ongoing',
             ])
             ->assertRedirect(route('admin.tournaments.create'))
@@ -223,6 +225,7 @@ class TournamentLifecycleTest extends TestCase
             ->put(route('admin.tournaments.update', $tournament), [
                 'name' => 'Shifting Cup',
                 'type' => 'inter_barangay',
+                ...$this->formatFields(),
                 'start_date' => '2026-10-01',
                 'end_date' => '2026-10-31',
                 'status' => 'ongoing',
@@ -242,6 +245,7 @@ class TournamentLifecycleTest extends TestCase
         $this->actingAs($this->admin)->put(route('admin.tournaments.update', $tournament), [
             'name' => 'Shifting Cup',
             'type' => 'inter_barangay',
+            ...$this->formatFields(),
             'start_date' => '2026-12-01',
             'end_date' => '2026-12-10',
         ]);
@@ -263,6 +267,7 @@ class TournamentLifecycleTest extends TestCase
             ->put(route('admin.tournaments.update', $legacy), [
                 'name' => 'Legacy League Renamed',
                 'type' => 'inter_zone',
+                ...$this->formatFields(),
             ])
             ->assertRedirect(route('admin.tournaments.edit', $legacy))
             ->assertSessionHasErrors(['start_date', 'end_date']);
@@ -273,6 +278,7 @@ class TournamentLifecycleTest extends TestCase
             ->put(route('admin.tournaments.update', $legacy), [
                 'name' => 'Legacy League',
                 'type' => 'inter_zone',
+                ...$this->formatFields(),
                 'start_date' => '2026-12-01',
                 'end_date' => '2026-12-31',
             ])

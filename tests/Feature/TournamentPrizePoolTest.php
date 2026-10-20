@@ -35,6 +35,7 @@ class TournamentPrizePoolTest extends TestCase
         return array_merge([
             'name' => 'Prize Cup',
             'type' => 'inter_barangay',
+            ...$this->formatFields(),
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-20',
         ], $overrides);

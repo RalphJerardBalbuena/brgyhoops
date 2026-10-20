@@ -206,6 +206,7 @@ class TournamentAccessTest extends TestCase
             ->post(route('admin.tournaments.store'), [
                 'name' => 'Barangay Cup',
                 'type' => 'inter_zone',
+                ...$this->formatFields(),
                 'start_date' => Tournament::today()->addWeek()->toDateString(),
                 'end_date' => Tournament::today()->addMonth()->toDateString(),
                 // No longer accepted: managers join through applications.

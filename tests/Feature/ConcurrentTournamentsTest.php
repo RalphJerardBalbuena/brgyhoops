@@ -123,6 +123,7 @@ class ConcurrentTournamentsTest extends TestCase
             ->post(route('admin.tournaments.store'), [
                 'name' => 'Charlie Classic',
                 'type' => 'inter_town',
+                ...$this->formatFields(),
                 // Dates spanning today make the tournament ongoing.
                 'start_date' => Tournament::today()->subWeek()->toDateString(),
                 'end_date' => Tournament::today()->addMonth()->toDateString(),

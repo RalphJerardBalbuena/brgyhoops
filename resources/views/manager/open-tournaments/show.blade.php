@@ -64,6 +64,16 @@
                             <div class="detail-value">{{ $prizePool ?? 'Not announced' }}</div>
                         </div>
 
+                        <div>
+                            <div class="detail-label">Tournament Format</div>
+                            <div class="detail-value">{{ $tournament->tournamentFormatLabel() ?? 'Not specified' }}</div>
+                        </div>
+
+                        <div>
+                            <div class="detail-label">Finals Format</div>
+                            <div class="detail-value">{{ $tournament->finalsFormatLabel() ?? 'Not specified' }}</div>
+                        </div>
+
                         @if (filled($tournament->venue))
                             <div>
                                 <div class="detail-label">Venue</div>

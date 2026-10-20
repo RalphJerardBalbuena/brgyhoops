@@ -44,8 +44,9 @@ class AdminTournamentController extends Controller
 
         $venueSupported = Tournament::supportsVenue();
         $prizePoolSupported = Tournament::supportsPrizePool();
+        $formatsSupported = Tournament::supportsFormats();
 
-        return view('admin.tournaments.create', compact('venueSupported', 'prizePoolSupported'));
+        return view('admin.tournaments.create', compact('venueSupported', 'prizePoolSupported', 'formatsSupported'));
     }
 
     /**
@@ -73,6 +74,12 @@ class AdminTournamentController extends Controller
             $attributes['prize_pool'] = $validated['prize_pool'] ?? null;
         }
 
+        // And for the formats and their add_formats_to_tournaments migration.
+        if (Tournament::supportsFormats()) {
+            $attributes['tournament_format'] = $validated['tournament_format'];
+            $attributes['finals_format'] = $validated['finals_format'];
+        }
+
         Tournament::create($attributes);
 
         return redirect()
@@ -92,8 +99,9 @@ class AdminTournamentController extends Controller
 
         $venueSupported = Tournament::supportsVenue();
         $prizePoolSupported = Tournament::supportsPrizePool();
+        $formatsSupported = Tournament::supportsFormats();
 
-        return view('admin.tournaments.edit', compact('tournament', 'venueSupported', 'prizePoolSupported'));
+        return view('admin.tournaments.edit', compact('tournament', 'venueSupported', 'prizePoolSupported', 'formatsSupported'));
     }
 
     /**
@@ -121,6 +129,13 @@ class AdminTournamentController extends Controller
             $attributes['prize_pool'] = $validated['prize_pool'] ?? null;
         }
 
+        // Formats are required on every save, so a legacy tournament without
+        // them gets real values the next time it is edited.
+        if (Tournament::supportsFormats()) {
+            $attributes['tournament_format'] = $validated['tournament_format'];
+            $attributes['finals_format'] = $validated['finals_format'];
+        }
+
         $tournament->update($attributes);
 
         return redirect()
@@ -135,7 +150,16 @@ class AdminTournamentController extends Controller
      */
     private function tournamentRules(): array
     {
-        return [
+        // Required once the format columns exist; before their migration runs
+        // the fields are not shown, so they are not validated either.
+        $formatRules = Tournament::supportsFormats()
+            ? [
+                'tournament_format' => ['required', Rule::in(array_keys(Tournament::TOURNAMENT_FORMATS))],
+                'finals_format' => ['required', Rule::in(array_keys(Tournament::FINALS_FORMATS))],
+            ]
+            : [];
+
+        return $formatRules + [
             'name' => ['required', 'string', 'max:255'],
             'type' => [
                 'required',
@@ -159,7 +183,7 @@ class AdminTournamentController extends Controller
     }
 
     /**
-     * Tournament columns (excluding venue and prize pool) from validated input.
+     * Tournament columns (excluding venue, prize pool and formats) from validated input.
      *
      * Status is never taken from the request: the model derives it from
      * the start and end dates when the tournament is saved.

@@ -33,6 +33,23 @@ class Tournament extends Model
     ];
 
     /**
+     * Basketball tournament formats an admin can choose.
+     */
+    public const TOURNAMENT_FORMATS = [
+        'single_round_robin' => 'Single Round Robin',
+        'single_elimination' => 'Single Elimination',
+        'combination' => 'Combination Format',
+    ];
+
+    /**
+     * Finals formats an admin can choose.
+     */
+    public const FINALS_FORMATS = [
+        'single_game' => 'Single Game',
+        'best_of_3' => 'Best-of-3',
+    ];
+
+    /**
      * Status is derived from the dates; it stays fillable only so legacy
      * records (missing a date) and internal code can still set it.
      */
@@ -41,6 +58,8 @@ class Tournament extends Model
         'type',
         'venue',
         'prize_pool',
+        'tournament_format',
+        'finals_format',
         'description',
         'start_date',
         'end_date',
@@ -93,6 +112,31 @@ class Tournament extends Model
         $amount = $this->getAttributes()['prize_pool'] ?? null;
 
         return $amount === null ? null : '₱' . number_format((float) $amount, 2);
+    }
+
+    /**
+     * Whether the tournament_format/finals_format columns exist (their migration has run).
+     */
+    public static function supportsFormats(): bool
+    {
+        return Schema::hasColumn('tournaments', 'tournament_format')
+            && Schema::hasColumn('tournaments', 'finals_format');
+    }
+
+    /**
+     * Display label for the tournament format, or null when not specified.
+     */
+    public function tournamentFormatLabel(): ?string
+    {
+        return self::TOURNAMENT_FORMATS[$this->getAttributes()['tournament_format'] ?? ''] ?? null;
+    }
+
+    /**
+     * Display label for the finals format, or null when not specified.
+     */
+    public function finalsFormatLabel(): ?string
+    {
+        return self::FINALS_FORMATS[$this->getAttributes()['finals_format'] ?? ''] ?? null;
     }
 
     /**

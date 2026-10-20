@@ -216,6 +216,7 @@ class TournamentParticipationRulesTest extends TestCase
             ->put(route('admin.tournaments.update', $current), [
                 'name' => 'Current League',
                 'type' => 'inter_barangay',
+                ...$this->formatFields(),
                 'start_date' => '2026-10-25',
                 'end_date' => '2026-11-12',
             ])

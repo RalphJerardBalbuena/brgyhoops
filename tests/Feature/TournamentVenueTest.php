@@ -30,6 +30,7 @@ class TournamentVenueTest extends TestCase
         return array_merge([
             'name' => 'Venue Cup',
             'type' => 'inter_barangay',
+            ...$this->formatFields(),
             'start_date' => Tournament::today()->subWeek()->toDateString(),
             'end_date' => Tournament::today()->addMonth()->toDateString(),
         ], $overrides);
